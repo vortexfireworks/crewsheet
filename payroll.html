@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payroll Submit — Crewsheet</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0f1e">
+<link rel="icon" href="icon-192.png">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+function toggleTheme(){
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  if(isLight){
+    document.documentElement.removeAttribute('data-theme');
+    try{ localStorage.setItem('pyroTheme', 'dark'); } catch(e){}
+  } else {
+    document.documentElement.setAttribute('data-theme', 'light');
+    try{ localStorage.setItem('pyroTheme', 'light'); } catch(e){}
+  }
+  updateThemeToggleIcon();
+}
+function updateThemeToggleIcon(){
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  const el = document.getElementById('themeToggleIcon');
+  if(el) el.textContent = isLight ? '🌙' : '☀️';
+}
+updateThemeToggleIcon();
+
+  (function(){
+    try{
+      var saved = localStorage.getItem('pyroTheme');
+      var wantLight;
+      if(saved === 'light' || saved === 'dark'){
+        wantLight = (saved === 'light');
+      } else {
+        wantLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+      }
+      if(wantLight){
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+    } catch(e){}
+  })();
+</script>
+<style>
+  :root{
+    --kicker:#ffb98a; --surface-5:rgba(10,14,26,0.5); --surface-55:rgba(10,14,26,0.55); --bg1:#16233f; --bg2:#0a0f1e; --bg3:#05070f;
+    --logo-ring-bg:#0d1220;
+    --navy:#ffb98a; --brick:#ff6a5a; --brick-light:#ff8c66;
+    --card:rgba(22,28,48,0.75); --line:rgba(255,255,255,0.12);
+    --ink:#f4f1ea; --ink-soft:#a3a9bf; --ok:#4caf7d;
+    --accent1:#d92b2b; --accent2:#ff8c00;
+  }
+
+  :root[data-theme="light"]{
+    --kicker:#c9601f; --surface-5:rgba(255,255,255,0.6); --surface-55:rgba(255,255,255,0.65); --bg1:#fdf3e7; --bg2:#f7ead9; --bg3:#f0e0c9; --ink:#241f18; --ink-soft:#6b6152; --card:rgba(255,255,255,0.78); --line:rgba(36,31,24,0.12); --navy:#c9601f;
+    --logo-ring-bg:#fffaf3;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background: radial-gradient(ellipse at 50% -10%, var(--bg1) 0%, var(--bg2) 55%, var(--bg3) 100%);
+    color:var(--ink);
+    font-family:"Helvetica Neue",Arial,sans-serif;
+    padding:32px 16px 80px;
+    min-height:100vh;
+  }
+  .sheet{max-width:640px;margin:0 auto;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;backdrop-filter:blur(6px);}
+  header{text-align:center;margin-bottom:12px;}
+  .logo-ring{
+    width:92px;height:92px;border-radius:50%;
+    padding:3px;
+    background:linear-gradient(140deg,#d92b2b,#ff8c00 35%,#ffd23f 55%,#2f7ec9 75%,#123a63);
+    margin:0 auto 16px;
+    box-shadow:0 0 34px rgba(255,140,0,0.35), 0 0 60px rgba(47,126,201,0.25);
+  }
+  .logo-ring-inner{
+    width:100%;height:100%;border-radius:50%;
+    background:var(--logo-ring-bg);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .logo-ring img{width:72px;height:72px;border-radius:50%;object-fit:cover;}
+  header .kicker{
+    font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--kicker);font-weight:700;margin-bottom:6px;
+  }
+  header h1{
+    margin:0;font-size:22px;font-weight:800;letter-spacing:-0.02em;
+    background:linear-gradient(90deg,#ff6a5a 0%,#ff8c00 30%,#ffd23f 50%,#5a9de0 75%,#7fa8e8 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    line-height:1.15;
+  }
+  .divider{
+    height:3px;width:64px;margin:20px auto 24px;
+    background:linear-gradient(90deg,#d92b2b,#ff8c00 35%,#ffd23f 55%,#2f7ec9 80%,#123a63);
+    border-radius:2px;
+    box-shadow:0 0 12px rgba(255,140,0,0.4);
+  }
+  .section{padding:22px 24px;border-bottom:1px solid var(--line);}
+  .section h2{font-size:13px;font-weight:600;color:#ffb98a;margin:0 0 14px;}
+  .field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  label{font-size:11.5px;color:var(--ink-soft);font-weight:600;}
+  input[type=text],input[type=date],input[type=number],select{
+    font-size:14px;padding:9px 11px;border:1px solid var(--line);
+    border-radius:6px;background:var(--surface-55);color:var(--ink);
+  }
+  input:focus,select:focus{outline:none;border-color:#ff8c00;box-shadow:0 0 0 2px rgba(255,140,0,0.2);}
+  input[readonly]{background:rgba(255,255,255,0.04);color:var(--ink-soft);}
+  button.primary{
+    background:linear-gradient(135deg,var(--accent1),var(--accent2)); color:#fdf6f2; border:none;
+    font-size:14px; font-weight:700; padding:12px 20px; border-radius:8px; cursor:pointer;
+    box-shadow:0 0 16px rgba(255,140,0,0.3);
+  }
+  button.primary:hover{filter:brightness(1.1);}
+  button.secondary{
+    background:none; border:1px solid var(--line); color:var(--navy);
+    font-size:13px; padding:8px 14px; border-radius:6px; cursor:pointer;
+  }
+  button.secondary:hover{border-color:var(--navy);}
+  button.small{font-size:12px;padding:6px 10px;}
+  .checkbox-row{display:flex;align-items:center;gap:8px;margin:8px 0 16px;}
+  .checkbox-row input{width:auto;}
+  .checkbox-row label{font-size:13.5px;color:var(--ink);font-weight:400;}
+  table.people{width:100%;border-collapse:collapse;}
+  table.people th{
+    font-size:10.5px;color:var(--ink-soft);text-align:left;
+    padding:0 8px 6px 0;font-weight:600;
+  }
+  table.people td{padding:4px 8px 4px 0;}
+  table.people input[type=text]{width:100%;}
+  table.people input[type=number]{width:100%;text-align:right;}
+  @media(max-width:480px){
+    table.people thead{display:none;}
+    table.people, table.people tbody, table.people tr, table.people td{display:block;width:100%;}
+    table.people tr{
+      border:1px solid var(--line); border-radius:8px;
+      padding:10px 12px; margin-bottom:10px;
+    }
+    table.people td{padding:6px 0;}
+    table.people td[data-label]:not([data-label=""])::before{
+      content:attr(data-label);
+      display:block; font-size:10.5px; color:var(--ink-soft); font-weight:600; margin-bottom:3px;
+    }
+    table.people td:last-child{
+      display:flex; justify-content:flex-end; padding-top:0;
+    }
+  }
+  .rm-row{background:none;border:none;color:var(--brick);cursor:pointer;font-size:17px;line-height:1;padding:4px;}
+  .add-row{
+    margin-top:8px; background:none; border:1px dashed var(--line);
+    color:var(--navy); font-size:12.5px; padding:7px 12px; border-radius:6px; cursor:pointer;
+  }
+  .add-row:hover{border-color:var(--navy);}
+  .totals{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:14px 0 0; font-size:14px; font-weight:600;
+  }
+  .totals .mismatch{color:var(--brick); font-weight:600; font-size:12.5px;}
+  .totals .match{color:var(--ok); font-weight:600; font-size:12.5px;}
+  .status{font-size:11.5px;color:var(--ink-soft);margin-top:8px;}
+  .actions{padding:22px 24px 26px; display:flex; gap:12px; flex-wrap:wrap;}
+  @media(max-width:480px){
+    .row2{grid-template-columns:1fr;}
+  }
+  .back-link{
+    display:block; max-width:640px; margin:16px auto 0; padding:0 16px;
+    font-size:12.5px; color:var(--ink-soft); text-decoration:none;
+  }
+  .back-link:hover{color:var(--navy);}
+  .theme-toggle{
+    position:fixed; top:14px; right:14px; z-index:50;
+    width:36px;height:36px;border-radius:50%;
+    background:var(--card); border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;
+    font-size:16px; cursor:pointer;
+    transition:transform 0.15s ease;
+  }
+  .theme-toggle:hover{transform:scale(1.08);}
+</style>
+
+</head>
+<body>
+<button type="button" class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Switch theme"><span id="themeToggleIcon">☀️</span></button>
+
+
+<div id="undoToast" style="display:none;position:fixed;left:16px;right:16px;bottom:20px;max-width:400px;margin:0 auto;background:#1c2434;border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:12px 16px;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 8px 24px rgba(0,0,0,0.4);z-index:100;">
+  <span id="undoToastMsg" style="font-size:13px;color:var(--ink);">Person removed</span>
+  <button type="button" onclick="undoRemove()" style="background:none;border:none;color:#ffb98a;font-weight:700;font-size:13px;cursor:pointer;padding:4px 8px;">Undo</button>
+</div>
+
+<a class="back-link" href="index.html">&larr; Back to main menu</a>
+
+<header>
+  <div class="logo-ring"><div class="logo-ring-inner"><img src="logo.jpg" alt="Crewsheet logo"></div></div>
+  <p class="kicker">Crewsheet</p>
+  <h1>Payroll Submit</h1>
+</header>
+
+<div class="divider"></div>
+
+<div class="sheet" id="mainContent">
+  <div class="section">
+    <h2>Event</h2>
+    <div class="row2">
+      <div class="field">
+        <label for="event">Venue</label>
+        <select id="event" onchange="showVenueAddress()">
+          <option value="" disabled selected>Select a venue…</option>
+        </select>
+        <p id="venueAddress" style="font-size:12px;color:var(--ink-soft);margin:6px 0 0;"></p>
+      </div>
+      <div class="field">
+        <label for="eventDate">Date of event</label>
+        <input type="date" id="eventDate">
+      </div>
+    </div>
+    <div class="field" id="descriptionField" style="display:none;">
+      <label for="hoursDescription">Description</label>
+      <textarea id="hoursDescription" rows="3" style="font-size:14px;padding:9px 11px;border:1px solid var(--line);border-radius:6px;background:var(--surface-55);color:var(--ink);resize:vertical;font-family:inherit;" placeholder="What was worked on during this time?"></textarea>
+    </div>
+    <button class="secondary" type="button" onclick="loadFromCheckins()">Load people who checked in</button>
+    <p class="status" id="loadStatus"></p>
+  </div>
+
+  <div class="section">
+    <h2>People &amp; pay</h2>
+    <table class="people" id="peopleTable">
+      <thead>
+        <tr><th style="width:30%">Name</th><th style="width:40%">Address</th><th style="width:22%" id="amountHeader">Amount ($)</th><th></th></tr>
+      </thead>
+      <tbody>
+        <tr id="headPyroRow" style="background:rgba(255,140,0,0.08);">
+          <td data-label="Name">
+            <input type="text" class="p-name" id="hpName" list="licensedOperatorDirectoryList" oninput="onNameEdit(this)" placeholder="Head Pyro name">
+          </td>
+          <td data-label="Address"><input type="text" class="p-address" id="hpAddress"></td>
+          <td data-label="Amount ($)"><input type="number" class="p-amount" id="hpAmount" min="0" step="1" oninput="onAmountEdit()"></td>
+          <td data-label="" style="font-size:9.5px;color:var(--brick);font-weight:700;text-align:center;white-space:nowrap;">HP</td>
+        </tr>
+      </tbody>
+      <tbody id="peopleBody"></tbody>
+    </table>
+    <button class="add-row" type="button" onclick="addPersonRow()">+ Add person</button>
+    <datalist id="operatorDirectoryList"></datalist>
+    <datalist id="licensedOperatorDirectoryList"></datalist>
+  </div>
+
+  <div class="section" style="border-bottom:none;">
+    <h2 id="payrollSectionTitle">Budget</h2>
+    <div class="field">
+      <label for="totalPayroll" id="totalPayrollLabel">Total budget ($)</label>
+      <input type="number" id="totalPayroll" min="0" step="1" oninput="recalculate()">
+    </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="divideEvenly" onchange="recalculate()">
+      <label for="divideEvenly" id="divideEvenlyLabel">Divide evenly between all people</label>
+    </div>
+    <div class="totals">
+      <span id="sumLabel">Total budget allocation:</span>
+      <span id="sumDisplay">$0</span>
+    </div>
+    <p id="matchMsg" class="status"></p>
+  </div>
+
+  <div class="actions">
+    <button class="secondary" type="button" onclick="emailToManager()">Email to Manager (cc Office)</button>
+    <button class="secondary" type="button" onclick="emailToOffice()">Email to Office</button>
+    <button class="secondary" type="button" onclick="downloadPayrollPDF()">Download as PDF</button>
+    <button class="secondary" type="button" onclick="downloadPayrollCSV()">Download as CSV</button>
+  </div>
+  <p class="status" id="emailStatus" style="padding:0 24px;"></p>
+  <p style="padding:0 24px 20px;font-size:11.5px;color:var(--ink-soft);">"Email to Manager" sends to manager@example.com and CCs office@example.com; "Email to Office" sends to office@example.com only. On phones that support it, this opens your share sheet with the actual PDF ready to attach — the share sheet can't fill in the recipient automatically, so double-check the "To:" field once Mail opens. On devices where that's not supported, it downloads the PDF and opens a plain email instead, and you'll need to attach it yourself.</p>
+</div>
+
+<script>
+const CONTACTS = [
+  {name:"Avery Bloom", license:"", address:"14 Maple Ridge Rd, Rivergate, ST 00000", age:"22", phone:"(555) 010-1001"},
+  {name:"Jordan Ashford", license:"Display FE900101, Special Effects FE900102, Flame FE900103", address:"208 Founders Way, Rivergate, ST 00000", age:"41", phone:"(555) 010-1002"},
+  {name:"Casey Whitfield", license:"FE900204", address:"77 Lakeside Dr, Millbrook, ST 00000", age:"29", phone:"(555) 010-1003"},
+  {name:"Riley Hutton", license:"", address:"1420 Orchard Ln, Millbrook, ST 00000", age:"19", phone:"(555) 010-1004"},
+  {name:"Sam Ferreira", license:"Display FE900305, Prox FE900306", address:"9 Cedarcrest Ave, Rivergate, ST 00000", age:"37", phone:"(555) 010-1005"},
+  {name:"Morgan Ellsworth", license:"", address:"602 Brookview Ct, Northgate, ST 00000", age:"24", phone:"(555) 010-1006"},
+  {name:"Taylor Meservy", license:"FE900407", address:"315 Harborview Rd, Northgate, ST 00000", age:"33", phone:"(555) 010-1007"},
+  {name:"Jamie Okafor", license:"", address:"88 Pinehollow St, Millbrook, ST 00000", age:"20", phone:"(555) 010-1008"},
+  {name:"Devon Castellano", license:"Display & Prox FE900508", address:"140 Summit Pass, Rivergate, ST 00000", age:"46", phone:"(555) 010-1009"},
+  {name:"Reese Talavera", license:"", address:"27 Willow Bend, Northgate, ST 00000", age:"27", phone:"(555) 010-1010"},
+  {name:"Quinn Sabatino", license:"FE900609", address:"455 Autumn Ridge Dr, Millbrook, ST 00000", age:"52", phone:"(555) 010-1011"},
+  {name:"Skyler Rasband", license:"", address:"19 Cobblestone Way, Rivergate, ST 00000", age:"23", phone:"(555) 010-1012"},
+  {name:"Emerson Dahl", license:"(D) FE900710, (SE) FE900711", address:"333 Fairview Ter, Northgate, ST 00000", age:"44", phone:"(555) 010-1013"},
+  {name:"Harper Osei", license:"", address:"", age:"", phone:"(555) 010-1014"},
+  {name:"Rowan Petrocelli", license:"FE900812", address:"1200 Silver Birch Ln, Rivergate, ST 00000", age:"36", phone:"(555) 010-1015"},
+  {name:"Finley Tannehill", license:"", address:"64 Meadowlark Dr, Millbrook, ST 00000", age:"18", phone:"(555) 010-1016"},
+  {name:"Blair Nakashima", license:"Prox FE900913, Flame FE900914", address:"701 Copperfield Rd, Northgate, ST 00000", age:"39", phone:"(555) 010-1017"},
+  {name:"Elliot Vandermolen", license:"", address:"58 Timberline Ct, Rivergate, ST 00000", age:"21", phone:"(555) 010-1018"}
+];
+
+const CONTACTS_BY_NAME = {};
+CONTACTS.forEach(c => CONTACTS_BY_NAME[c.name.toLowerCase()] = c);
+
+const CHECKIN_API_URL = "PASTE_YOUR_DEMO_APPS_SCRIPT_URL_HERE";
+
+async function fetchOperatorDirectory(){
+  try{
+    const res = await fetch(`${CHECKIN_API_URL}?type=contacts`);
+    if(!res.ok) throw new Error('Request failed');
+    const sheetContacts = await res.json();
+    if(Array.isArray(sheetContacts)){
+      sheetContacts.forEach(c => {
+        if(!c.name) return;
+        CONTACTS_BY_NAME[c.name.trim().toLowerCase()] = {
+          name: c.name.trim(),
+          license: c.license || '',
+          address: c.address || '',
+          age: c.age || ''
+        };
+      });
+    }
+  } catch(err){
+    // fall back silently — manual entry still works
+  }
+  const dl = document.getElementById('operatorDirectoryList');
+  if(dl) dl.innerHTML = Object.values(CONTACTS_BY_NAME).map(c => `<option value="${c.name}">`).join('');
+  populateLicensedDatalist();
+}
+fetchOperatorDirectory();
+
+function populateLicensedDatalist(){
+  const dl = document.getElementById('licensedOperatorDirectoryList');
+  const sorted = Object.values(CONTACTS_BY_NAME)
+    .filter(c => c.license && c.license.trim())
+    .sort((a,b) => a.name.localeCompare(b.name));
+  dl.innerHTML = sorted.map(c => `<option value="${c.name.replace(/"/g,'&quot;')}">`).join('');
+}
+
+async function fetchVenueDirectory(){
+  try{
+    const res = await fetch(`${CHECKIN_API_URL}?type=venues`);
+    if(!res.ok) throw new Error('Request failed');
+    const sheetVenues = await res.json();
+    if(Array.isArray(sheetVenues)){
+      sheetVenues.forEach(v => {
+        if(!v.name) return;
+        VENUE_INFO[v.name.trim().toLowerCase()] = {
+          name: v.name.trim(),
+          address: v.address || '',
+          county: v.county || '',
+          eventDate: v.eventDate || ''
+        };
+      });
+      populateVenueSelect();
+    }
+  } catch(err){
+    // fall back silently to the built-in venue list
+  }
+}
+
+const VENUE_INFO = {
+  "rivergate stadium": { name: "Rivergate Stadium", address: "400 Stadium Way, Rivergate, ST 00000", county: "Rivergate" },
+  "northgate university": { name: "Northgate University", address: "1 Founders Cir, Northgate, ST 00000", county: "Northgate" },
+  "millbrook ballpark": { name: "Millbrook Ballpark", address: "100 Ballpark Way, Millbrook, ST 00000", county: "Millbrook" },
+  "trailer loading": { name: "Trailer Loading", address: "Shop", county: "Rivergate" },
+  "shop time": { name: "Shop Time", address: "Shop", county: "Rivergate" },
+  "bunker time": { name: "Bunker Time", address: "Bunker", county: "Rivergate" },
+  "rivergate high school": { name: "Rivergate High School", address: "350 School St, Rivergate, ST 00000", county: "Rivergate" },
+  "northgate high school": { name: "Northgate High School", address: "12 Beetdigger Blvd, Northgate, ST 00000", county: "Northgate" },
+  "millbrook central high school": { name: "Millbrook Central High School", address: "545 Copper Hills Pkwy, Millbrook, ST 00000", county: "Millbrook" },
+  "founders park": { name: "Founders Park", address: "90 Founders Way, Rivergate, ST 00000", county: "Rivergate" },
+  "lakeside amphitheater": { name: "Lakeside Amphitheater", address: "77 Lakeside Dr, Millbrook, ST 00000", county: "Millbrook" },
+  "rivergate city hall": { name: "Rivergate City Hall", address: "200 Civic Center Dr, Rivergate, ST 00000", county: "Rivergate" },
+  "northgate city hall": { name: "Northgate City Hall", address: "14 Civic Way, Northgate, ST 00000", county: "Northgate" },
+  "millbrook fairgrounds": { name: "Millbrook Fairgrounds", address: "930 Fair Ln, Millbrook, ST 00000", county: "Millbrook" },
+  "summit community college": { name: "Summit Community College", address: "800 College Pkwy, Northgate, ST 00000", county: "Northgate" },
+  "riverside golf club": { name: "Riverside Golf Club", address: "22 Fairway Dr, Rivergate, ST 00000", county: "Rivergate" },
+  "sample county fair": { name: "Sample County Fair", address: "1050 Fair Blvd, Sample, ST 00000", county: "Sample" }
+};
+
+const ALWAYS_AVAILABLE_NO_DATE = ['shop time', 'trailer loading', 'bunker time'];
+
+function formatDateForOption(dateStr){
+  if(!dateStr) return '';
+  const datePart = dateStr.slice(0, 10);
+  const parts = datePart.split('-');
+  if(parts.length !== 3) return dateStr;
+  const [y, m, d] = parts;
+  if(isNaN(Number(m)) || isNaN(Number(d))) return dateStr;
+  return `${Number(m)}/${Number(d)}`;
+}
+
+function populateVenueSelect(){
+  const select = document.getElementById('event');
+  const currentValue = select.value;
+
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const threeMonthsAgo = new Date(today); threeMonthsAgo.setMonth(today.getMonth() - 3);
+  const threeMonthsAhead = new Date(today); threeMonthsAhead.setMonth(today.getMonth() + 3);
+
+  const sorted = Object.values(VENUE_INFO)
+    .filter(v => {
+      if(ALWAYS_AVAILABLE_NO_DATE.includes(v.name.trim().toLowerCase())) return true;
+      if(!v.eventDate) return false;
+      const d = new Date(v.eventDate.slice(0, 10) + 'T00:00:00');
+      return d >= threeMonthsAgo && d <= threeMonthsAhead;
+    })
+    .sort((a, b) => {
+      if(a.eventDate && b.eventDate) return a.eventDate.localeCompare(b.eventDate);
+      if(a.eventDate && !b.eventDate) return -1;
+      if(!a.eventDate && b.eventDate) return 1;
+      return a.name.localeCompare(b.name);
+    });
+
+  select.innerHTML = '<option value="" disabled>Select a venue…</option>' +
+    sorted.map(v => {
+      const label = v.eventDate ? `${formatDateForOption(v.eventDate)} — ${v.name}` : v.name;
+      return `<option value="${v.name.replace(/"/g,'&quot;')}">${label.replace(/</g,'&lt;')}</option>`;
+    }).join('');
+  if(currentValue){
+    select.value = currentValue;
+  } else {
+    select.selectedIndex = 0;
+  }
+}
+populateVenueSelect();
+fetchVenueDirectory();
+
+function showVenueAddress(){
+  const venue = document.getElementById('event').value.trim();
+  const match = VENUE_INFO[venue.toLowerCase()];
+  const addressEl = document.getElementById('venueAddress');
+  addressEl.textContent = match ? `${match.address} · ${match.county} County` : '';
+  updateModeUI();
+}
+
+function isHoursMode(){
+  const venue = document.getElementById('event').value.trim().toLowerCase();
+  return venue === 'shop time' || venue === 'bunker time' || venue === 'trailer loading';
+}
+
+function updateModeUI(){
+  const hours = isHoursMode();
+  const step = hours ? '0.25' : '1';
+
+  document.getElementById('payrollSectionTitle').textContent = hours ? 'Total hours' : 'Budget';
+  document.getElementById('totalPayrollLabel').textContent = hours ? 'Total hours' : 'Total budget ($)';
+  document.getElementById('totalPayroll').step = step;
+  document.getElementById('divideEvenlyLabel').textContent = hours ? 'Divide hours evenly between all people' : 'Divide evenly between all people';
+  document.getElementById('amountHeader').textContent = hours ? 'Hours' : 'Amount ($)';
+  document.getElementById('sumLabel').textContent = hours ? 'Total hours allocation:' : 'Total budget allocation:';
+  document.getElementById('headPyroRow').style.display = hours ? 'none' : '';
+  document.getElementById('descriptionField').style.display = hours ? '' : 'none';
+
+  document.querySelectorAll('.p-amount').forEach(inp => inp.step = step);
+
+  recalculate();
+}
+
+let lastRemovedPerson = null;
+let undoToastTimer = null;
+
+function removePersonRow(row){
+  const name = row.querySelector('.p-name').value.trim();
+  const address = row.querySelector('.p-address').value.trim();
+  const amount = row.querySelector('.p-amount').value.trim();
+  const checkinTimeEl = row.querySelector('.checkin-time');
+  const checkInTime = checkinTimeEl ? checkinTimeEl.textContent.replace('Checked in ', '').trim() : '';
+
+  lastRemovedPerson = { name, address, amount, checkInTime };
+  row.remove();
+  recalculate();
+
+  const toast = document.getElementById('undoToast');
+  document.getElementById('undoToastMsg').textContent = name ? `${name} removed` : 'Person removed';
+  toast.style.display = 'flex';
+  clearTimeout(undoToastTimer);
+  undoToastTimer = setTimeout(() => { toast.style.display = 'none'; lastRemovedPerson = null; }, 6000);
+}
+
+function undoRemove(){
+  if(!lastRemovedPerson) return;
+  addPersonRow(lastRemovedPerson.name, lastRemovedPerson.address, lastRemovedPerson.checkInTime);
+  const rows = document.querySelectorAll('#peopleBody tr');
+  const newRow = rows[rows.length - 1];
+  if(newRow) newRow.querySelector('.p-amount').value = lastRemovedPerson.amount;
+  recalculate();
+  document.getElementById('undoToast').style.display = 'none';
+  clearTimeout(undoToastTimer);
+  lastRemovedPerson = null;
+}
+
+function addPersonRow(name, address, checkInTime){
+  const tbody = document.getElementById('peopleBody');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td data-label="Name">
+      <input type="text" class="p-name" value="${name ? name.replace(/"/g,'&quot;') : ''}" list="operatorDirectoryList" oninput="onNameEdit(this)">
+      <div class="checkin-time" style="font-size:10.5px;color:var(--ink-soft);margin-top:3px;${checkInTime ? '' : 'display:none;'}">${checkInTime ? 'Checked in ' + checkInTime : ''}</div>
+    </td>
+    <td data-label="Address"><input type="text" class="p-address" value="${address ? address.replace(/"/g,'&quot;') : ''}"></td>
+    <td data-label="Amount ($)"><input type="number" class="p-amount" min="0" step="${isHoursMode() ? '0.25' : '1'}" oninput="onAmountEdit()"></td>
+    <td data-label=""><button class="rm-row" type="button" onclick="removePersonRow(this.closest('tr'))" aria-label="Remove">&times;</button></td>
+  `;
+  tbody.appendChild(tr);
+}
+addPersonRow();
+addPersonRow();
+
+function onNameEdit(nameInput){
+  const match = CONTACTS_BY_NAME[nameInput.value.trim().toLowerCase()];
+  if(match){
+    const row = nameInput.closest('tr');
+    const addressField = row.querySelector('.p-address');
+    if(!addressField.value.trim()) addressField.value = match.address || '';
+  }
+  if(document.getElementById('divideEvenly').checked) recalculate();
+}
+
+function formatCheckInTime(timestamp){
+  if(!timestamp) return '';
+  const d = new Date(timestamp);
+  if(isNaN(d.getTime())) return '';
+  return d.toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'});
+}
+
+function formatManualTime(timeStr){
+  if(!timeStr) return '';
+  const parts = timeStr.split(':');
+  if(parts.length < 2) return '';
+  let hours = parseInt(parts[0], 10);
+  const minutes = parts[1];
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  if(hours === 0) hours = 12;
+  return `${hours}:${minutes} ${ampm}`;
+}
+
+async function loadFromCheckins(){
+  const statusEl = document.getElementById('loadStatus');
+  const eventName = document.getElementById('event').value.trim();
+  const eventDateVal = document.getElementById('eventDate').value.trim();
+  if(!eventName){
+    statusEl.textContent = 'Select a venue first.';
+    return;
+  }
+  statusEl.textContent = 'Loading check-ins…';
+  try{
+    const res = await fetch(`${CHECKIN_API_URL}?event=${encodeURIComponent(eventName)}`);
+    if(!res.ok) throw new Error('Request failed');
+    let checkins = await res.json();
+    if(!Array.isArray(checkins)) checkins = [];
+    if(eventDateVal){
+      checkins = checkins.filter(p => String(p.eventDate || '').slice(0, 10) === eventDateVal);
+    }
+    if(checkins.length === 0){
+      statusEl.textContent = eventDateVal
+        ? 'No check-ins found for this venue on that date.'
+        : 'No check-ins found for this venue yet.';
+      return;
+    }
+
+    document.getElementById('peopleBody').innerHTML = '';
+    const seen = new Set();
+    const hours = isHoursMode();
+    let headPyroPerson = null;
+    if(!hours){
+      const hpCheckin = checkins.find(p => p.isHeadPyro && (p.name || '').trim());
+      if(hpCheckin){
+        const hpKey = hpCheckin.name.trim().toLowerCase();
+        const hpDirectoryMatch = CONTACTS_BY_NAME[hpKey];
+        headPyroPerson = {
+          name: hpCheckin.name,
+          address: hpCheckin.address || (hpDirectoryMatch ? hpDirectoryMatch.address : '') || ''
+        };
+      }
+    }
+    checkins.forEach(p => {
+      const key = (p.name || '').trim().toLowerCase();
+      if(!key || seen.has(key)) return;
+      if(headPyroPerson && key === headPyroPerson.name.trim().toLowerCase()) return;
+      seen.add(key);
+      const directoryMatch = CONTACTS_BY_NAME[key];
+      const address = p.address || (directoryMatch ? directoryMatch.address : '') || '';
+      const checkInTime = p.checkInTime ? formatManualTime(p.checkInTime) : formatCheckInTime(p.timestamp);
+      addPersonRow(p.name, address, checkInTime);
+    });
+    if(headPyroPerson && !isHoursMode()){
+      document.getElementById('hpName').value = headPyroPerson.name;
+      document.getElementById('hpAddress').value = headPyroPerson.address;
+    }
+    statusEl.textContent = `Loaded ${seen.size} ${seen.size === 1 ? 'person' : 'people'} from check-ins.` +
+      (headPyroPerson && !isHoursMode() ? ` ${headPyroPerson.name} was marked as Head Pyro at check-in and filled in below.` : '');
+    recalculate();
+  } catch(err){
+    statusEl.textContent = 'Could not load check-ins — check your connection and try again.';
+  }
+}
+
+function onAmountEdit(){
+  // Manual edits only matter when not dividing evenly
+  if(!document.getElementById('divideEvenly').checked){
+    updateSumDisplay();
+  }
+}
+
+function recalculate(){
+  const rows = Array.from(document.querySelectorAll('#peopleBody tr'));
+  const divideEvenly = document.getElementById('divideEvenly').checked;
+  const hours = isHoursMode();
+  const hpNameFilled = !hours && document.getElementById('hpName').value.trim();
+  const hpAmountInput = document.getElementById('hpAmount');
+  const amountInputs = rows.map(r => r.querySelector('.p-amount'));
+  const allAmountInputs = hpNameFilled ? amountInputs.concat([hpAmountInput]) : amountInputs;
+
+  if(divideEvenly){
+    allAmountInputs.forEach(inp => inp.readOnly = true);
+    const total = parseFloat(document.getElementById('totalPayroll').value) || 0;
+    const n = allAmountInputs.length;
+    if(n === 0){
+      updateSumDisplay();
+      return;
+    }
+    if(hours){
+      // Distribute in quarter-hour increments so the sum matches exactly
+      const totalQuarters = Math.round(total * 4);
+      const baseQuarters = Math.floor(totalQuarters / n);
+      let remainder = totalQuarters - baseQuarters * n;
+      allAmountInputs.forEach((inp, i) => {
+        const quarters = baseQuarters + (i < remainder ? 1 : 0);
+        inp.value = (quarters / 4).toFixed(2).replace(/\.?0+$/, '') || '0';
+      });
+    } else {
+      const totalRounded = Math.round(total);
+      const base = Math.floor(totalRounded / n);
+      let remainder = totalRounded - base * n;
+      allAmountInputs.forEach((inp, i) => {
+        const amount = base + (i < remainder ? 1 : 0);
+        inp.value = amount;
+      });
+    }
+  } else {
+    allAmountInputs.forEach(inp => inp.readOnly = false);
+    hpAmountInput.readOnly = false;
+  }
+  updateSumDisplay();
+}
+
+function formatUnit(value, hours){
+  return hours ? `${value.toLocaleString(undefined, {maximumFractionDigits: 2})} hrs` : `$${value.toLocaleString()}`;
+}
+
+function updateSumDisplay(){
+  const hours = isHoursMode();
+  const amounts = Array.from(document.querySelectorAll('.p-amount')).map(i => parseFloat(i.value) || 0);
+  const sum = amounts.reduce((a,b) => a+b, 0);
+  document.getElementById('sumDisplay').textContent = formatUnit(sum, hours);
+
+  const total = parseFloat(document.getElementById('totalPayroll').value) || 0;
+  const compareTotal = hours ? total : Math.round(total);
+  const matchMsg = document.getElementById('matchMsg');
+  if(document.getElementById('totalPayroll').value === ''){
+    matchMsg.textContent = '';
+    matchMsg.className = 'status';
+  } else if(Math.abs(sum - compareTotal) < 0.01){
+    matchMsg.textContent = `Matches total of ${formatUnit(compareTotal, hours)}.`;
+    matchMsg.className = 'status';
+    matchMsg.style.color = 'var(--ok)';
+  } else {
+    matchMsg.textContent = `Does not match total of ${formatUnit(compareTotal, hours)} (off by ${formatUnit(Math.abs(sum - compareTotal), hours)}).`;
+    matchMsg.style.color = 'var(--brick)';
+  }
+}
+
+function collectPeople(){
+  return Array.from(document.querySelectorAll('#peopleBody tr')).map(row => ({
+    name: row.querySelector('.p-name').value.trim(),
+    address: row.querySelector('.p-address').value.trim(),
+    checkInTime: (row.querySelector('.checkin-time')?.textContent || '').replace('Checked in ', '').trim(),
+    amount: parseFloat(row.querySelector('.p-amount').value) || 0
+  })).filter(p => p.name);
+}
+
+function buildPayrollText(){
+  const event = document.getElementById('event').value.trim();
+  const eventDate = document.getElementById('eventDate').value.trim();
+  const total = document.getElementById('totalPayroll').value.trim();
+  const people = collectPeople();
+  const venueInfo = VENUE_INFO[event.toLowerCase()];
+  const hours = isHoursMode();
+  const unit = hours ? ' hrs' : '';
+  const prefix = hours ? '' : '$';
+  const headPyroName = document.getElementById('hpName').value.trim();
+  const headPyroAddress = document.getElementById('hpAddress').value.trim();
+  const headPyroAmount = parseFloat(document.getElementById('hpAmount').value) || 0;
+  const lines = [];
+  lines.push('PAYROLL SUBMISSION');
+  lines.push(`Venue: ${event || '(not selected)'}`);
+  if(venueInfo) lines.push(`Address: ${venueInfo.address} (${venueInfo.county} County)`);
+  lines.push(`Date of event: ${eventDate || '(not set)'}`);
+  if(hours){
+    const description = document.getElementById('hoursDescription').value.trim();
+    if(description) lines.push(`Description: ${description}`);
+  }
+  lines.push(`Total ${hours ? 'hours' : 'budget'}: ${prefix}${total || '0'}${unit}`);
+  lines.push('');
+  lines.push('Payments:');
+  if(!hours && headPyroName){
+    lines.push(`  - ${headPyroName} (HP)${headPyroAddress ? ' (' + headPyroAddress + ')' : ''}: ${prefix}${headPyroAmount.toLocaleString()}${unit}`);
+  }
+  people.forEach(p => lines.push(`  - ${p.name}${p.checkInTime ? ' [checked in ' + p.checkInTime + ']' : ''}${p.address ? ' (' + p.address + ')' : ''}: ${prefix}${p.amount.toLocaleString()}${unit}`));
+  const sum = people.reduce((a,p) => a + p.amount, 0) + (!hours ? headPyroAmount : 0);
+  lines.push('');
+  lines.push(`Total ${hours ? 'hours' : 'budget'} allocation: ${prefix}${sum.toLocaleString()}${unit}`);
+  return lines.join('\n');
+}
+
+function buildPayrollPDF(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:'pt', format:'letter'});
+  const marginX = 40;
+  const pageWidth = doc.internal.pageSize.getWidth();
+  let y = 50;
+
+  const event = document.getElementById('event').value.trim() || '(not selected)';
+  const eventDate = document.getElementById('eventDate').value.trim() || '(not set)';
+  const total = document.getElementById('totalPayroll').value.trim() || '0';
+  const people = collectPeople();
+  const venueInfo = VENUE_INFO[event.toLowerCase()];
+  const hours = isHoursMode();
+  const unit = hours ? ' hrs' : '';
+  const prefix = hours ? '' : '$';
+  const headPyroName = document.getElementById('hpName').value.trim();
+  const headPyroAddress = document.getElementById('hpAddress').value.trim();
+  const headPyroAmount = parseFloat(document.getElementById('hpAmount').value) || 0;
+  const sum = people.reduce((a,p) => a + p.amount, 0) + (!hours ? headPyroAmount : 0);
+
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(15);
+  doc.text('Crewsheet', marginX, y); y += 20;
+  doc.setFontSize(12.5);
+  doc.text(hours ? 'Hours Submission' : 'Payroll Submission', marginX, y); y += 24;
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(91,100,112);
+  doc.text('VENUE', marginX, y);
+  doc.text('DATE OF EVENT', marginX + 260, y);
+  y += 13;
+  doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(20,26,32);
+  doc.text(event, marginX, y);
+  doc.text(eventDate, marginX + 260, y);
+  y += 16;
+
+  if(venueInfo){
+    doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(91,100,112);
+    doc.text(`${venueInfo.address} (${venueInfo.county} County)`, marginX, y);
+    y += 18;
+  } else {
+    y += 6;
+  }
+
+  if(hours){
+    const description = document.getElementById('hoursDescription').value.trim();
+    if(description){
+      doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(91,100,112);
+      doc.text('DESCRIPTION', marginX, y); y += 13;
+      doc.setFont('helvetica','normal'); doc.setFontSize(10.5); doc.setTextColor(20,26,32);
+      const descLines = doc.splitTextToSize(description, pageWidth - marginX * 2);
+      doc.text(descLines, marginX, y);
+      y += descLines.length * 13 + 10;
+    }
+  }
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(91,100,112);
+  doc.text(hours ? 'TOTAL HOURS' : 'TOTAL BUDGET', marginX, y); y += 13;
+  doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(20,26,32);
+  doc.text(`${prefix}${Number(total).toLocaleString()}${unit}`, marginX, y); y += 24;
+
+  doc.setDrawColor(216,210,196);
+  doc.line(marginX, y, pageWidth - marginX, y); y += 18;
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(91,100,112);
+  doc.text('NAME', marginX, y);
+  doc.text('ADDRESS', marginX + 160, y);
+  doc.text(hours ? 'HOURS' : 'AMOUNT', pageWidth - marginX - 60, y);
+  y += 14;
+  doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(20,26,32);
+
+  if(!hours && headPyroName){
+    doc.text(`${headPyroName} (HP)`, marginX, y);
+    if(headPyroAddress){
+      const addrLines = doc.splitTextToSize(headPyroAddress, pageWidth - marginX - 160 - 70);
+      doc.text(addrLines[0], marginX + 160, y);
+    }
+    doc.text(`$${headPyroAmount.toLocaleString()}`, pageWidth - marginX - 60, y);
+    y += 16;
+  }
+
+  people.forEach(p => {
+    doc.text(p.name, marginX, y);
+    if(p.address){
+      const addrLines = doc.splitTextToSize(p.address, pageWidth - marginX - 160 - 70);
+      doc.text(addrLines[0], marginX + 160, y);
+    }
+    doc.text(`${prefix}${p.amount.toLocaleString()}${unit}`, pageWidth - marginX - 60, y);
+    if(p.checkInTime){
+      y += 11;
+      doc.setFontSize(8); doc.setTextColor(91,100,112);
+      doc.text(`Checked in ${p.checkInTime}`, marginX, y);
+      doc.setFontSize(10); doc.setTextColor(20,26,32);
+      y += 12;
+    } else {
+      y += 16;
+    }
+  });
+
+  y += 8;
+  doc.setDrawColor(216,210,196);
+  doc.line(marginX, y, pageWidth - marginX, y); y += 18;
+  doc.setFont('helvetica','bold'); doc.setFontSize(11);
+  doc.text(hours ? 'Total hours allocation' : 'Total budget allocation', marginX, y);
+  doc.text(`${prefix}${sum.toLocaleString()}${unit}`, pageWidth - marginX - 60, y);
+
+  return doc;
+}
+
+function buildPayrollFileName(){
+  const parts = [];
+  const eventDate = document.getElementById('eventDate').value.trim();
+  if(eventDate) parts.push(eventDate);
+  const venue = document.getElementById('event').value.trim();
+  if(venue) parts.push(venue.replace(/\s+/g,'_'));
+  const hpName = document.getElementById('hpName').value.trim();
+  if(hpName) parts.push(hpName.replace(/\s+/g,'_'));
+  const base = parts.length ? parts.join('_') : 'payroll';
+  return `Payroll_${base}.pdf`.replace(/[\\/:*?"<>|]/g, '');
+}
+
+function downloadPayrollPDF(){
+  const people = collectPeople();
+  if(people.length === 0){
+    alert('Add at least one person before exporting.');
+    return;
+  }
+  const doc = buildPayrollPDF();
+  doc.save(buildPayrollFileName());
+}
+
+function csvEscapeField(val){
+  val = String(val == null ? '' : val);
+  if(val.includes(',') || val.includes('"') || val.includes('\n')){
+    return '"' + val.replace(/"/g, '""') + '"';
+  }
+  return val;
+}
+
+function downloadPayrollCSV(){
+  const people = collectPeople();
+  if(people.length === 0){
+    alert('Add at least one person before exporting.');
+    return;
+  }
+  const hours = isHoursMode();
+  const unitLabel = hours ? 'Hours' : 'Amount ($)';
+  const lines = [`Name,Address,${unitLabel},Checked In`];
+
+  const hpName = document.getElementById('hpName').value.trim();
+  if(!hours && hpName){
+    const hpAddress = document.getElementById('hpAddress').value.trim();
+    const hpAmount = parseFloat(document.getElementById('hpAmount').value) || 0;
+    lines.push([csvEscapeField(hpName + ' (HP)'), csvEscapeField(hpAddress), csvEscapeField(hpAmount), ''].join(','));
+  }
+  people.forEach(p => {
+    lines.push([csvEscapeField(p.name), csvEscapeField(p.address), csvEscapeField(p.amount), csvEscapeField(p.checkInTime || '')].join(','));
+  });
+
+  const blob = new Blob([lines.join('\n')], {type: 'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = buildPayrollFileName().replace(/\.pdf$/, '.csv');
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function sharePayrollPDF(toAddress, ccAddress){
+  const people = collectPeople();
+  if(people.length === 0){
+    alert('Add at least one person before emailing.');
+    return;
+  }
+
+  const statusEl = document.getElementById('emailStatus');
+  const recipientLine = ccAddress ? `To: ${toAddress} (cc: ${ccAddress})` : `To: ${toAddress}`;
+
+  const doc = buildPayrollPDF();
+  const fileName = buildPayrollFileName();
+  const event = document.getElementById('event').value.trim();
+  const eventDate = document.getElementById('eventDate').value.trim();
+  const subject = `Payroll - ${event || 'Event'}${eventDate ? ' - ' + eventDate : ''}`;
+
+  const pdfBlob = doc.output('blob');
+
+  // Try the device's native share sheet first — this can attach the real PDF
+  // to Mail (or any app) on supported browsers, unlike a mailto: link.
+  // The share sheet has no way to pre-fill a recipient, so we surface it
+  // clearly on-screen and at the top of the shared text as a backup.
+  if(navigator.canShare){
+    try{
+      const file = new File([pdfBlob], fileName, {type: 'application/pdf'});
+      if(navigator.canShare({files: [file]})){
+        statusEl.textContent = `Opening share sheet — remember to address it: ${recipientLine}`;
+        statusEl.style.color = 'var(--brick)';
+        await navigator.share({
+          files: [file],
+          title: subject,
+          text: `${recipientLine}\n\n${subject}`
+        });
+        payrollSubmitted = true;
+        return;
+      }
+    } catch(err){
+      if(err && err.name === 'AbortError'){
+        statusEl.textContent = '';
+        return; // user cancelled the share sheet
+      }
+      // otherwise fall through to the mailto fallback below
+    }
+  }
+
+  // Fallback: download the PDF and open a plain-text email addressed and ready to go
+  statusEl.textContent = '';
+  doc.save(fileName);
+  const body = buildPayrollText() + '\n\n(PDF copy downloaded separately — please attach it to this email before sending.)';
+  const ccParam = ccAddress ? `&cc=${encodeURIComponent(ccAddress)}` : '';
+  const mailto = `mailto:${encodeURIComponent(toAddress)}?${ccParam ? ccParam.slice(1) + '&' : ''}subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  window.location.href = mailto;
+  payrollSubmitted = true;
+}
+
+function emailToManager(){
+  sharePayrollPDF('manager@example.com', 'office@example.com');
+}
+
+function emailToOffice(){
+  sharePayrollPDF('office@example.com', '');
+}
+
+let payrollSubmitted = false;
+function hasUnsavedPayrollContent(){
+  const total = document.getElementById('totalPayroll').value.trim();
+  const hpName = document.getElementById('hpName').value.trim();
+  const anyPeople = Array.from(document.querySelectorAll('#peopleBody .p-name')).some(el => el.value.trim());
+  return !!total || !!hpName || anyPeople;
+}
+window.addEventListener('beforeunload', (e) => {
+  if(payrollSubmitted) return;
+  if(hasUnsavedPayrollContent()){
+    e.preventDefault();
+    e.returnValue = '';
+  }
+});
+
+updateModeUI();
+</script>
+
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>

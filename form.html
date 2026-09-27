@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0f1e">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Display/Special Effects/Flame Effects Operator — After Action Report</title>
+<script>
+function toggleTheme(){
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  if(isLight){
+    document.documentElement.removeAttribute('data-theme');
+    try{ localStorage.setItem('pyroTheme', 'dark'); } catch(e){}
+  } else {
+    document.documentElement.setAttribute('data-theme', 'light');
+    try{ localStorage.setItem('pyroTheme', 'light'); } catch(e){}
+  }
+  updateThemeToggleIcon();
+}
+function updateThemeToggleIcon(){
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  const el = document.getElementById('themeToggleIcon');
+  if(el) el.textContent = isLight ? '🌙' : '☀️';
+}
+updateThemeToggleIcon();
+
+  (function(){
+    try{
+      var saved = localStorage.getItem('pyroTheme');
+      var wantLight;
+      if(saved === 'light' || saved === 'dark'){
+        wantLight = (saved === 'light');
+      } else {
+        wantLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+      }
+      if(wantLight){
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+    } catch(e){}
+  })();
+</script>
+<style>
+  :root{
+    --surface-5:rgba(10,14,26,0.5); --surface-55:rgba(10,14,26,0.55); --bg1:#16233f; --bg2:#0a0f1e; --bg3:#05070f;
+    --navy:#ffb98a;
+    --brick:#ff6a5a;
+    --brick-light:#ff8c66;
+    --card:rgba(22,28,48,0.75);
+    --line:rgba(255,255,255,0.12);
+    --ink:#f4f1ea;
+    --ink-soft:#a3a9bf;
+    --ok:#4caf7d;
+    --warn:#ff6a5a;
+    --accent1:#d92b2b; --accent2:#ff8c00;
+  }
+
+  :root[data-theme="light"]{
+    --surface-5:rgba(255,255,255,0.6); --surface-55:rgba(255,255,255,0.65); --bg1:#fdf3e7; --bg2:#f7ead9; --bg3:#f0e0c9; --ink:#241f18; --ink-soft:#6b6152; --card:rgba(255,255,255,0.78); --line:rgba(36,31,24,0.12); --navy:#c9601f;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background: radial-gradient(ellipse at 50% -10%, var(--bg1) 0%, var(--bg2) 55%, var(--bg3) 100%);
+    color:var(--ink);
+    font-family:"Iowan Old Style","Palatino Linotype","Georgia",serif;
+    line-height:1.5;
+    padding:32px 16px 80px;
+  }
+  .sheet{
+    max-width:820px;
+    margin:0 auto;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    overflow:hidden;
+    backdrop-filter:blur(6px);
+  }
+  header{
+    text-align:center;
+    padding:26px 28px 22px;
+  }
+  header .kicker{
+    font-family:"Helvetica Neue",Arial,sans-serif;
+    font-size:11px;
+    letter-spacing:.16em;
+    color:var(--navy);
+    font-weight:700;
+    text-transform:uppercase;
+    margin:0 0 8px;
+  }
+  header h1{
+    margin:0;
+    font-size:20px;
+    font-weight:800;
+    letter-spacing:-0.01em;
+    line-height:1.35;
+    background:linear-gradient(90deg,#ff6a5a 0%,#ff8c00 30%,#ffd23f 50%,#5a9de0 75%,#7fa8e8 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  header p.ref{
+    margin:12px 0 0;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    font-family:"Helvetica Neue",Arial,sans-serif;
+  }
+  header .divider{
+    height:3px;width:64px;margin:20px auto 0;
+    background:linear-gradient(90deg,#d92b2b,#ff8c00 35%,#ffd23f 55%,#2f7ec9 80%,#123a63);
+    border-radius:2px;
+    box-shadow:0 0 12px rgba(255,140,0,0.4);
+  }
+  .section{
+    padding:22px 28px;
+    border-bottom:1px solid var(--line);
+  }
+  .section h2{
+    font-family:"Helvetica Neue",Arial,sans-serif;
+    font-size:13px;
+    font-weight:600;
+    color:#ffb98a;
+    margin:0 0 14px;
+    letter-spacing:.02em;
+  }
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px 20px;}
+  .field{display:flex;flex-direction:column;gap:5px;}
+  .field.full{grid-column:1/-1;}
+  label{
+    font-family:"Helvetica Neue",Arial,sans-serif;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    font-weight:600;
+  }
+  input[type=text],input[type=date],input[type=number],textarea,select{
+    font-family:"Helvetica Neue",Arial,sans-serif;
+    font-size:14px;
+    padding:8px 10px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    background:var(--surface-55);
+    color:var(--ink);
+  }
+  input:focus,textarea:focus,select:focus{
+    outline:none;
+    border-color:#ff8c00;
+    box-shadow:0 0 0 2px rgba(255,140,0,0.2);
+  }
+  textarea{resize:vertical;min-height:64px;}
+  .radiorow{display:flex;gap:18px;flex-wrap:wrap;margin-top:2px;}
+  .radiorow label{
+    display:flex;align-items:center;gap:6px;
+    font-weight:400;color:var(--ink);font-size:13.5px;
+  }
+  .radiorow input{width:auto;}
+  table.personnel{width:100%;border-collapse:collapse;margin-top:4px;}
+  table.personnel th{
+    font-family:"Helvetica Neue",Arial,sans-serif;
+    font-size:10.5px;color:var(--ink-soft);text-align:left;
+    padding:0 6px 6px;font-weight:600;
+  }
+  table.personnel td{padding:3px 6px 3px 0;}
+  table.personnel input{width:100%;}
+  @media(max-width:600px){
+    table.personnel thead{display:none;}
+    table.personnel, table.personnel tbody, table.personnel tr, table.personnel td{display:block;width:100%;}
+    table.personnel tr{
+      border:1px solid var(--line); border-radius:6px;
+      padding:10px 12px; margin-bottom:10px;
+    }
+    table.personnel td{padding:6px 0;}
+    table.personnel td[data-label]:not([data-label=""])::before{
+      content:attr(data-label);
+      display:block; font-family:"Helvetica Neue",Arial,sans-serif;
+      font-size:10.5px; color:var(--ink-soft); font-weight:600; margin-bottom:3px;
+    }
+    table.personnel td:last-child{
+      display:flex; justify-content:flex-end; padding-top:0;
+    }
+  }
+  .rm-row{
+    background:none;border:none;color:var(--brick);cursor:pointer;
+    font-size:18px;line-height:1;padding:4px;
+  }
+  .add-row{
+    margin-top:8px;
+    background:none;
+    border:1px dashed var(--line);
+    color:var(--navy);
+    font-family:"Helvetica Neue",Arial,sans-serif;
+    font-size:12.5px;
+    padding:7px 12px;
+    border-radius:6px;
+    cursor:pointer;
+  }
+  .add-row:hover{border-color:var(--navy);}
+  .incident{
+    display:grid;grid-template-columns:1.4fr 0.6fr 2fr;
+    gap:0 16px;align-items:start;margin-bottom:14px;
+  }
+  .incident .q{font-size:13.5px;padding-top:8px;}
+  .incident .expl{width:100%;}
+  .notice{
+    background:rgba(76,175,125,0.12);
+    border:1px solid rgba(76,175,125,0.35);
+    color:var(--ok);
+    font-family:"Helvetica Neue",Arial,sans-serif;
+    font-size:12px;
+    padding:10px 14px;
+    border-radius:6px;
+    margin-top:10px;
+  }
+  .actions{
+    padding:24px 28px 28px;
+    display:flex;gap:12px;flex-wrap:wrap;align-items:center;
+  }
+  button.primary{
+    background:linear-gradient(135deg,var(--accent1),var(--accent2));
+    color:#fdf6f2;
+    border:none;
+    font-family:"Helvetica Neue",Arial,sans-serif;
+    font-size:14px;font-weight:700;
+    padding:12px 22px;
+    border-radius:8px;
+    cursor:pointer;
+    box-shadow:0 0 18px rgba(255,140,0,0.3);
+  }
+  button.primary:hover{filter:brightness(1.1);}
+  button.secondary, label.secondary{
+    background:none;
+    border:1px solid var(--line);
+    color:var(--navy);
+    font-family:"Helvetica Neue",Arial,sans-serif;
+    font-size:13.5px;
+    padding:11px 18px;
+    border-radius:8px;
+    cursor:pointer;
+  }
+  button.secondary:hover, label.secondary:hover{border-color:var(--navy);}
+  .err{
+    color:var(--brick);
+    font-size:12px;
+    font-family:"Helvetica Neue",Arial,sans-serif;
+    display:none;
+    padding:0 28px 16px;
+  }
+  .footer-note{
+    padding:0 28px 24px;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    font-family:"Helvetica Neue",Arial,sans-serif;
+  }
+  @media(max-width:600px){
+    .grid2{grid-template-columns:1fr;}
+    .incident{grid-template-columns:1fr;gap:4px;}
+    .incident .q{padding-top:0;}
+  }
+  .back-link{
+    display:block; max-width:820px; margin:16px auto 0; padding:0 16px;
+    font-size:12.5px; color:var(--ink-soft); text-decoration:none;
+  }
+  .back-link:hover{color:var(--navy);}
+  .theme-toggle{
+    position:fixed; top:14px; right:14px; z-index:50;
+    width:36px;height:36px;border-radius:50%;
+    background:var(--card); border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;
+    font-size:16px; cursor:pointer;
+    transition:transform 0.15s ease;
+  }
+  .theme-toggle:hover{transform:scale(1.08);}
+</style>
+
+</head>
+<body>
+<button type="button" class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Switch theme"><span id="themeToggleIcon">☀️</span></button>
+
+
+<div id="undoToast" style="display:none;position:fixed;left:16px;right:16px;bottom:20px;max-width:600px;margin:0 auto;background:#1c2434;border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:12px 16px;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 8px 24px rgba(0,0,0,0.4);z-index:100;font-family:"Helvetica Neue",Arial,sans-serif;">
+  <span id="undoToastMsg" style="font-size:13px;color:var(--ink);">Person removed</span>
+  <button type="button" onclick="undoRemovePersonnel()" style="background:none;border:none;color:#ffb98a;font-weight:700;font-size:13px;cursor:pointer;padding:4px 8px;">Undo</button>
+</div>
+
+<a class="back-link" href="index.html">&larr; Back to main menu</a>
+
+<div id="draftBanner" style="display:none;max-width:820px;margin:0 auto 14px;background:rgba(255,140,0,0.12);border:1px solid rgba(255,140,0,0.35);border-radius:10px;padding:12px 16px;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;font-family:'Helvetica Neue',Arial,sans-serif;">
+  <span style="font-size:13px;color:#f4f1ea;">You have a saved draft of this report.</span>
+  <div style="display:flex;gap:10px;">
+    <button type="button" id="restoreDraftBtn" style="background:linear-gradient(135deg,#d92b2b,#ff8c00);color:#fdf6f2;border:none;font-size:12.5px;font-weight:700;padding:8px 14px;border-radius:6px;cursor:pointer;">Restore draft</button>
+    <button type="button" id="discardDraftBtn" style="background:none;border:1px solid rgba(255,255,255,0.2);color:#f4f1ea;font-size:12.5px;padding:8px 14px;border-radius:6px;cursor:pointer;">Discard</button>
+  </div>
+</div>
+
+<div class="sheet">
+  <header>
+    <p class="kicker">OFFICE OF THE STATE FIRE MARSHAL</p>
+    <h1>Display Operator / Special Effects Operator / Flame Effects Operator<br>After‑Action Report</h1>
+    <p class="ref">Required under Rules Pursuant to the Utah Fireworks Act R‑710.2.7.19</p>
+    <div class="divider"></div>
+  </header>
+
+  <div class="section">
+    <h2>Operator &amp; event</h2>
+    <div class="grid2">
+      <div class="field full">
+        <label for="signInAutofill">Autofill from Sign-In</label>
+        <select id="signInAutofill" onchange="autofillFromSignIn(this)">
+          <option value="" selected>Select an event to autofill…</option>
+        </select>
+        <p style="font-size:11px;color:var(--ink-soft);margin:4px 0 0;">Pulls the date, venue, and Head Pyro's name and license from whoever checked in as Head Pyro for that event.</p>
+      </div>
+      <div class="field"><label for="opName">Name of operator or artisan</label><input type="text" id="opName" list="licensedContactsList" oninput="autofillOperator(this)"></div>
+      <div class="field"><label for="eventDate">Date of event or show</label><input type="date" id="eventDate"></div>
+      <div class="field"><label for="company">Name of company</label><input type="text" id="company" list="companyList"></div>
+      <datalist id="companyList"><option value="Crewsheet"></datalist>
+      <div class="field"><label for="license">License number</label><input type="text" id="license"></div>
+      <div class="field full">
+        <label for="event">Venue</label>
+        <input type="text" id="event" list="eventList" oninput="autofillEventAddress(this)">
+        <datalist id="eventList">
+          <option value="Rivergate Stadium">
+          <option value="Northgate University">
+          <option value="Millbrook Ballpark">
+          <option value="Trailer Loading">
+          <option value="Shop Time">
+          <option value="Bunker Time">
+          <option value="Rivergate High School">
+          <option value="Northgate High School">
+          <option value="Millbrook Central High School">
+          <option value="Founders Park">
+          <option value="Lakeside Amphitheater">
+          <option value="Rivergate City Hall">
+          <option value="Northgate City Hall">
+          <option value="Millbrook Fairgrounds">
+          <option value="Summit Community College">
+          <option value="Riverside Golf Club">
+          <option value="Sample County Fair">
+        </datalist>
+      </div>
+      <div class="field full"><label for="address">Address and/or location of event or show</label><input type="text" id="address"></div>
+      <div class="field"><label for="venue">County</label><input type="text" id="venue"></div>
+      <div class="field"><label for="dept">Permit — department</label><input type="text" id="dept"></div>
+      <div class="field"><label for="ahj">AHJ name &amp; title</label><input type="text" id="ahj"></div>
+      <div class="field"><label for="permitNum">Permit number</label><input type="text" id="permitNum"></div>
+    </div>
+
+    <div class="field full" style="margin-top:14px;">
+      <label>Display type (select all that apply)</label>
+      <div class="radiorow">
+        <label><input type="checkbox" name="dtype" value="NFPA 1123 Outdoor Display Operator"> NFPA 1123 outdoor display operator</label>
+        <label><input type="checkbox" name="dtype" value="NFPA 1126 Special Effects/Proximal Audience"> NFPA 1126 special effects / proximal audience</label>
+        <label><input type="checkbox" name="dtype" value="NFPA 160 Flame Effects"> NFPA 160 flame effects</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+      <span>Assisting personnel</span>
+      <button type="button" class="secondary" style="padding:7px 12px;font-size:12px;white-space:nowrap;" onclick="loadCheckins()">Load check-ins</button>
+    </h2>
+    <p id="checkinStatus" style="font-size:11.5px;color:var(--ink-soft);font-family:'Helvetica Neue',Arial,sans-serif;margin:-8px 0 14px;"></p>
+    <table class="personnel" id="personnelTable">
+      <thead>
+        <tr><th style="width:26%">Name</th><th style="width:20%">License number</th><th style="width:38%">Address / city / state / zip</th><th style="width:10%">Age</th><th></th></tr>
+      </thead>
+      <tbody id="personnelBody"></tbody>
+    </table>
+    <datalist id="contactsList"></datalist>
+    <datalist id="licensedContactsList"></datalist>
+    <button class="add-row" type="button" id="addRowBtn" onclick="addPersonnelRow()">+ Add person</button>
+    <p id="rowCapMsg" style="display:none;font-size:11.5px;color:var(--ink-soft);font-family:'Helvetica Neue',Arial,sans-serif;margin-top:6px;">Maximum of 10 personnel rows on this form — list any additional people on a second copy of the report.</p>
+  </div>
+
+  <div class="section">
+    <h2>Site safety</h2>
+    <div class="field full">
+      <label>Were all flammable materials, fuels, pressure cylinders, dispensers, igniters, or vessels cleared, vented, stabilized, shut off, and secured appropriately?</label>
+      <div class="radiorow">
+        <label><input type="radio" name="siteSafe" value="Yes"> Yes</label>
+        <label><input type="radio" name="siteSafe" value="No"> No</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Incident summary</h2>
+
+    <div class="incident">
+      <div class="q">Any duds or defective shells?</div>
+      <div class="radiorow"><label><input type="radio" name="q_duds" value="Yes">Yes</label><label><input type="radio" name="q_duds" value="No">No</label></div>
+      <input type="text" class="expl" id="expl_duds" placeholder="Explain, if applicable">
+    </div>
+
+    <div class="incident">
+      <div class="q">Any injuries? If yes, list name / address / age below.</div>
+      <div class="radiorow"><label><input type="radio" name="q_injury" value="Yes">Yes</label><label><input type="radio" name="q_injury" value="No">No</label></div>
+      <input type="text" class="expl" id="expl_injury" placeholder="Name / address / age, and explanation">
+    </div>
+
+    <div class="incident">
+      <div class="q">Any fire caused by fireworks?</div>
+      <div class="radiorow"><label><input type="radio" name="q_fire" value="Yes">Yes</label><label><input type="radio" name="q_fire" value="No">No</label></div>
+      <input type="text" class="expl" id="expl_fire" placeholder="Explain, if applicable">
+    </div>
+
+    <div class="incident">
+      <div class="q">Any violations or irregularities?</div>
+      <div class="radiorow"><label><input type="radio" name="q_viol" value="Yes">Yes</label><label><input type="radio" name="q_viol" value="No">No</label></div>
+      <input type="text" class="expl" id="expl_viol" placeholder="Explain, if applicable">
+    </div>
+
+    <div class="field full">
+      <label for="shells">Number and size of shells used, or number and types of special effects used</label>
+      <textarea id="shells"></textarea>
+    </div>
+  </div>
+
+  <div class="section" style="border-bottom:none;">
+    <h2>Certification</h2>
+    <div class="grid2">
+      <div class="field"><label for="sigName">Printed name of operator</label><input type="text" id="sigName"></div>
+      <div class="field"><label for="sigDate">Date signed</label><input type="date" id="sigDate"></div>
+    </div>
+    <div class="field full" style="margin-top:14px;">
+      <label>Signature</label>
+      <div style="border:1px solid var(--line);border-radius:3px;background:#fdfcfa;touch-action:none;">
+        <canvas id="sigPad" width="740" height="160" style="display:block;width:100%;height:160px;cursor:crosshair;"></canvas>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap;">
+        <button class="secondary" type="button" onclick="clearSignature()">Clear signature</button>
+        <label class="secondary" style="display:inline-flex;align-items:center;cursor:pointer;">
+          Upload signature image
+          <input type="file" accept="image/*" style="display:none;" onchange="handleSignatureUpload(event)">
+        </label>
+      </div>
+    </div>
+    <p class="notice">Only one after‑action report per flame effects display or performance. This report must be filed with the Office of the State Fire Marshal within ten (10) working days following the display.</p>
+  </div>
+
+  <p class="err" id="errMsg"></p>
+
+  <div class="actions">
+    <button class="primary" type="button" onclick="sendReport()">Email to state fire marshal</button>
+    <button class="secondary" type="button" onclick="exportPDF()">Export as PDF</button>
+    <button class="secondary" type="button" onclick="downloadSignature()">Download signature image</button>
+  </div>
+  <p class="status" id="emailStatus" style="padding:0 28px;font-size:12px;color:var(--brick);"></p>
+  <p class="footer-note">Office of the State Fire Marshal · 123 Main Street, Suite 100, Sample City, ST 00000 · 555-010-2000 · state.fire.marshal@example.com<br>
+  "Email to state fire marshal" addresses a message to state.fire.marshal@example.com (CC: Office Manager &amp; Office). On phones that support it, this opens your share sheet with the actual PDF ready to attach — the share sheet can't fill in the recipient automatically, so double-check the "To:" field once Mail opens. On devices where that's not supported, it downloads the PDF and opens a plain email instead, and you'll need to attach it yourself.</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+const CONTACTS = [
+  {name:"Avery Bloom", license:"", address:"14 Maple Ridge Rd, Rivergate, ST 00000", age:"22"},
+  {name:"Jordan Ashford", license:"Display FE900101, Special Effects FE900102, Flame FE900103", address:"208 Founders Way, Rivergate, ST 00000", age:"41"},
+  {name:"Casey Whitfield", license:"FE900204", address:"77 Lakeside Dr, Millbrook, ST 00000", age:"29"},
+  {name:"Riley Hutton", license:"", address:"1420 Orchard Ln, Millbrook, ST 00000", age:"19"},
+  {name:"Sam Ferreira", license:"Display FE900305, Prox FE900306", address:"9 Cedarcrest Ave, Rivergate, ST 00000", age:"37"},
+  {name:"Morgan Ellsworth", license:"", address:"602 Brookview Ct, Northgate, ST 00000", age:"24"},
+  {name:"Taylor Meservy", license:"FE900407", address:"315 Harborview Rd, Northgate, ST 00000", age:"33"},
+  {name:"Jamie Okafor", license:"", address:"88 Pinehollow St, Millbrook, ST 00000", age:"20"},
+  {name:"Devon Castellano", license:"Display & Prox FE900508", address:"140 Summit Pass, Rivergate, ST 00000", age:"46"},
+  {name:"Reese Talavera", license:"", address:"27 Willow Bend, Northgate, ST 00000", age:"27"},
+  {name:"Quinn Sabatino", license:"FE900609", address:"455 Autumn Ridge Dr, Millbrook, ST 00000", age:"52"},
+  {name:"Skyler Rasband", license:"", address:"19 Cobblestone Way, Rivergate, ST 00000", age:"23"},
+  {name:"Emerson Dahl", license:"(D) FE900710, (SE) FE900711", address:"333 Fairview Ter, Northgate, ST 00000", age:"44"},
+  {name:"Harper Osei", license:"", address:"", age:""},
+  {name:"Rowan Petrocelli", license:"FE900812", address:"1200 Silver Birch Ln, Rivergate, ST 00000", age:"36"},
+  {name:"Finley Tannehill", license:"", address:"64 Meadowlark Dr, Millbrook, ST 00000", age:"18"},
+  {name:"Blair Nakashima", license:"Prox FE900913, Flame FE900914", address:"701 Copperfield Rd, Northgate, ST 00000", age:"39"},
+  {name:"Elliot Vandermolen", license:"", address:"58 Timberline Ct, Rivergate, ST 00000", age:"21"}
+];
+const CONTACTS_BY_NAME = {};
+CONTACTS.forEach(c => CONTACTS_BY_NAME[c.name.toLowerCase()] = c);
+
+const CHECKIN_API_URL = "PASTE_YOUR_DEMO_APPS_SCRIPT_URL_HERE";
+
+async function fetchOperatorDirectory(){
+  try{
+    const res = await fetch(`${CHECKIN_API_URL}?type=contacts`);
+    if(!res.ok) throw new Error('Request failed');
+    const sheetContacts = await res.json();
+    if(Array.isArray(sheetContacts)){
+      sheetContacts.forEach(c => {
+        if(!c.name) return;
+        CONTACTS_BY_NAME[c.name.trim().toLowerCase()] = {
+          name: c.name.trim(),
+          license: c.license || '',
+          address: c.address || '',
+          age: c.age || ''
+        };
+      });
+    }
+  } catch(err){
+    // fall back silently to the built-in contact list
+  } finally {
+    populateDatalist();
+  }
+}
+
+async function fetchVenueDirectory(){
+  try{
+    const res = await fetch(`${CHECKIN_API_URL}?type=venues`);
+    if(!res.ok) throw new Error('Request failed');
+    const sheetVenues = await res.json();
+    if(Array.isArray(sheetVenues)){
+      sheetVenues.forEach(v => {
+        if(!v.name) return;
+        VENUE_INFO[v.name.trim().toLowerCase()] = {
+          name: v.name.trim(),
+          address: v.address || '',
+          county: v.county || ''
+        };
+      });
+      populateVenueDatalist();
+    }
+  } catch(err){
+    // fall back silently to the built-in venue list
+  }
+}
+
+async function loadCheckins(){
+  const statusEl = document.getElementById('checkinStatus');
+  const eventName = document.getElementById('event').value.trim();
+  const eventDateVal = document.getElementById('eventDate').value.trim();
+  if(!eventName){
+    statusEl.textContent = 'Type or select a venue first.';
+    return;
+  }
+  statusEl.textContent = 'Loading check-ins…';
+  try{
+    const res = await fetch(`${CHECKIN_API_URL}?event=${encodeURIComponent(eventName)}`);
+    if(!res.ok) throw new Error('Request failed');
+    let checkins = await res.json();
+    if(!Array.isArray(checkins)){
+      statusEl.textContent = 'No check-ins found for this venue yet.';
+      return;
+    }
+
+    if(eventDateVal){
+      checkins = checkins.filter(person => String(person.eventDate || '').slice(0, 10) === eventDateVal);
+    }
+
+    if(checkins.length === 0){
+      statusEl.textContent = eventDateVal
+        ? 'No check-ins found for this venue on the date entered.'
+        : 'No check-ins found for this venue yet.';
+      return;
+    }
+
+    const existingNames = new Set(
+      Array.from(document.querySelectorAll('#personnelBody .p-name'))
+        .map(el => el.value.trim().toLowerCase())
+        .filter(Boolean)
+    );
+
+    let added = 0, skipped = 0;
+    let headPyroPerson = null;
+    for(const person of checkins){
+      const nameKey = (person.name || '').trim().toLowerCase();
+      if(person.isHeadPyro && !headPyroPerson) headPyroPerson = person;
+      if(!nameKey || existingNames.has(nameKey)) { skipped++; continue; }
+
+      let row = Array.from(document.querySelectorAll('#personnelBody tr')).find(
+        r => !r.querySelector('.p-name').value.trim()
+      );
+      if(!row){
+        if(document.querySelectorAll('#personnelBody tr').length >= MAX_ROWS){ skipped++; continue; }
+        addPersonnelRow();
+        const rows = document.querySelectorAll('#personnelBody tr');
+        row = rows[rows.length - 1];
+      }
+      row.querySelector('.p-name').value = person.name || '';
+      row.querySelector('.p-license').value = person.license || '';
+      row.querySelector('.p-address').value = person.address || '';
+      row.querySelector('.p-age').value = person.age || '';
+      existingNames.add(nameKey);
+      added++;
+    }
+
+    let headPyroNote = '';
+    if(headPyroPerson){
+      const opNameField = document.getElementById('opName');
+      if(!opNameField.value.trim()){
+        opNameField.value = headPyroPerson.name;
+        autofillOperator(opNameField);
+        headPyroNote = ` ${headPyroPerson.name} was marked as Head Pyro at check-in and filled in above as the operator.`;
+      }
+    }
+
+    statusEl.textContent = (skipped > 0
+      ? `Added ${added} checked-in ${added === 1 ? 'person' : 'people'} (${skipped} skipped — already listed or row limit reached).`
+      : `Added ${added} checked-in ${added === 1 ? 'person' : 'people'}.`) + headPyroNote;
+  } catch(err){
+    statusEl.textContent = 'Could not load check-ins — check your connection and try again.';
+  }
+}
+
+const MAX_ROWS = 10;
+let personnelCount = 0;
+
+function populateDatalist(){
+  const merged = Object.values(CONTACTS_BY_NAME);
+  const dl = document.getElementById('contactsList');
+  dl.innerHTML = merged.map(c => `<option value="${c.name}">`).join('');
+  const ldl = document.getElementById('licensedContactsList');
+  ldl.innerHTML = merged.filter(c => c.license && c.license.trim()).map(c => `<option value="${c.name}">`).join('');
+  const odl = document.getElementById('operatorDirectoryList');
+  if(odl) odl.innerHTML = merged.map(c => `<option value="${c.name}">`).join('');
+}
+
+function autofillOperator(nameInput){
+  const match = CONTACTS_BY_NAME[nameInput.value.trim().toLowerCase()];
+  if(match && match.license){
+    document.getElementById('license').value = match.license;
+  }
+}
+
+function autofillRow(nameInput){
+  const match = CONTACTS_BY_NAME[nameInput.value.trim().toLowerCase()];
+  const row = nameInput.closest('tr');
+  if(match){
+    row.querySelector('.p-license').value = match.license;
+    row.querySelector('.p-address').value = match.address;
+    row.querySelector('.p-age').value = match.age;
+  }
+}
+
+function updateAddButtonState(){
+  const count = document.querySelectorAll('#personnelBody tr').length;
+  document.getElementById('addRowBtn').style.display = count >= MAX_ROWS ? 'none' : '';
+  document.getElementById('rowCapMsg').style.display = count >= MAX_ROWS ? 'block' : 'none';
+}
+
+let lastRemovedPersonnel = null;
+let undoToastTimer = null;
+
+function addPersonnelRow(name, license, address, age){
+  const currentCount = document.querySelectorAll('#personnelBody tr').length;
+  if(currentCount >= MAX_ROWS) return;
+  personnelCount++;
+  const id = personnelCount;
+  const tbody = document.getElementById('personnelBody');
+  const tr = document.createElement('tr');
+  tr.id = 'prow-' + id;
+  tr.innerHTML = `
+    <td data-label="Name"><input type="text" class="p-name" list="contactsList" oninput="autofillRow(this)" value="${name ? name.replace(/"/g,'&quot;') : ''}"></td>
+    <td data-label="License number"><input type="text" class="p-license" value="${license ? license.replace(/"/g,'&quot;') : ''}"></td>
+    <td data-label="Address / city / state / zip"><input type="text" class="p-address" value="${address ? address.replace(/"/g,'&quot;') : ''}"></td>
+    <td data-label="Age"><input type="text" class="p-age" style="width:100%" value="${age ? age.replace(/"/g,'&quot;') : ''}"></td>
+    <td data-label=""><button class="rm-row" type="button" onclick="removePersonnelRow(document.getElementById('prow-${id}'))" aria-label="Remove row">&times;</button></td>
+  `;
+  tbody.appendChild(tr);
+  updateAddButtonState();
+}
+
+function removePersonnelRow(row){
+  const name = row.querySelector('.p-name').value.trim();
+  const license = row.querySelector('.p-license').value.trim();
+  const address = row.querySelector('.p-address').value.trim();
+  const age = row.querySelector('.p-age').value.trim();
+
+  lastRemovedPersonnel = { name, license, address, age };
+  row.remove();
+  updateAddButtonState();
+
+  const toast = document.getElementById('undoToast');
+  document.getElementById('undoToastMsg').textContent = name ? `${name} removed` : 'Person removed';
+  toast.style.display = 'flex';
+  clearTimeout(undoToastTimer);
+  undoToastTimer = setTimeout(() => { toast.style.display = 'none'; lastRemovedPersonnel = null; }, 6000);
+}
+
+function undoRemovePersonnel(){
+  if(!lastRemovedPersonnel) return;
+  addPersonnelRow(lastRemovedPersonnel.name, lastRemovedPersonnel.license, lastRemovedPersonnel.address, lastRemovedPersonnel.age);
+  document.getElementById('undoToast').style.display = 'none';
+  clearTimeout(undoToastTimer);
+  lastRemovedPersonnel = null;
+}
+populateDatalist();
+addPersonnelRow();
+addPersonnelRow();
+addPersonnelRow();
+fetchOperatorDirectory();
+fetchVenueDirectory();
+
+const sigCanvas = document.getElementById('sigPad');
+const sigCtx = sigCanvas.getContext('2d');
+sigCtx.strokeStyle = '#20262c';
+sigCtx.lineWidth = 2.2;
+sigCtx.lineCap = 'round';
+sigCtx.lineJoin = 'round';
+let sigDrawing = false;
+let sigHasContent = false;
+
+function sigPos(e){
+  const rect = sigCanvas.getBoundingClientRect();
+  const scaleX = sigCanvas.width / rect.width;
+  const scaleY = sigCanvas.height / rect.height;
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  return {x:(clientX-rect.left)*scaleX, y:(clientY-rect.top)*scaleY};
+}
+function sigStart(e){
+  sigDrawing = true;
+  sigHasContent = true;
+  const p = sigPos(e);
+  sigCtx.beginPath();
+  sigCtx.moveTo(p.x, p.y);
+  e.preventDefault();
+}
+function sigMove(e){
+  if(!sigDrawing) return;
+  const p = sigPos(e);
+  sigCtx.lineTo(p.x, p.y);
+  sigCtx.stroke();
+  e.preventDefault();
+}
+function sigEnd(){ sigDrawing = false; }
+
+sigCanvas.addEventListener('mousedown', sigStart);
+sigCanvas.addEventListener('mousemove', sigMove);
+window.addEventListener('mouseup', sigEnd);
+sigCanvas.addEventListener('touchstart', sigStart, {passive:false});
+sigCanvas.addEventListener('touchmove', sigMove, {passive:false});
+sigCanvas.addEventListener('touchend', sigEnd);
+
+function clearSignature(){
+  sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+  sigHasContent = false;
+}
+
+function handleSignatureUpload(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+      // Fit the uploaded image within the pad while keeping its aspect ratio
+      const padW = sigCanvas.width, padH = sigCanvas.height;
+      const scale = Math.min(padW / img.width, padH / img.height);
+      const w = img.width * scale;
+      const h = img.height * scale;
+      const x = (padW - w) / 2;
+      const y = (padH - h) / 2;
+      sigCtx.drawImage(img, x, y, w, h);
+      sigHasContent = true;
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+  event.target.value = '';
+}
+
+function downloadSignature(){
+  if(!sigHasContent){
+    alert('Draw a signature first.');
+    return;
+  }
+  const url = sigCanvas.toDataURL('image/png');
+  const a = document.createElement('a');
+  const opName = document.getElementById('opName').value.trim().replace(/\s+/g,'_') || 'signature';
+  a.href = url;
+  a.download = `Signature_${opName}.png`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
+function radioVal(name){
+  const el = document.querySelector(`input[name="${name}"]:checked`);
+  return el ? el.value : '';
+}
+
+function checkboxVals(name){
+  const els = document.querySelectorAll(`input[name="${name}"]:checked`);
+  return Array.from(els).map(el => el.value).join('; ');
+}
+
+function val(id){
+  return document.getElementById(id).value.trim();
+}
+
+const VENUE_INFO = {
+  "rivergate stadium": { name: "Rivergate Stadium", address: "400 Stadium Way, Rivergate, ST 00000", county: "Rivergate" },
+  "northgate university": { name: "Northgate University", address: "1 Founders Cir, Northgate, ST 00000", county: "Northgate" },
+  "millbrook ballpark": { name: "Millbrook Ballpark", address: "100 Ballpark Way, Millbrook, ST 00000", county: "Millbrook" },
+  "trailer loading": { name: "Trailer Loading", address: "Shop", county: "Rivergate" },
+  "shop time": { name: "Shop Time", address: "Shop", county: "Rivergate" },
+  "bunker time": { name: "Bunker Time", address: "Bunker", county: "Rivergate" },
+  "rivergate high school": { name: "Rivergate High School", address: "350 School St, Rivergate, ST 00000", county: "Rivergate" },
+  "northgate high school": { name: "Northgate High School", address: "12 Beetdigger Blvd, Northgate, ST 00000", county: "Northgate" },
+  "millbrook central high school": { name: "Millbrook Central High School", address: "545 Copper Hills Pkwy, Millbrook, ST 00000", county: "Millbrook" },
+  "founders park": { name: "Founders Park", address: "90 Founders Way, Rivergate, ST 00000", county: "Rivergate" },
+  "lakeside amphitheater": { name: "Lakeside Amphitheater", address: "77 Lakeside Dr, Millbrook, ST 00000", county: "Millbrook" },
+  "rivergate city hall": { name: "Rivergate City Hall", address: "200 Civic Center Dr, Rivergate, ST 00000", county: "Rivergate" },
+  "northgate city hall": { name: "Northgate City Hall", address: "14 Civic Way, Northgate, ST 00000", county: "Northgate" },
+  "millbrook fairgrounds": { name: "Millbrook Fairgrounds", address: "930 Fair Ln, Millbrook, ST 00000", county: "Millbrook" },
+  "summit community college": { name: "Summit Community College", address: "800 College Pkwy, Northgate, ST 00000", county: "Northgate" },
+  "riverside golf club": { name: "Riverside Golf Club", address: "22 Fairway Dr, Rivergate, ST 00000", county: "Rivergate" },
+  "sample county fair": { name: "Sample County Fair", address: "1050 Fair Blvd, Sample, ST 00000", county: "Sample" }
+};
+
+function populateVenueDatalist(){
+  const dl = document.getElementById('eventList');
+  const sorted = Object.values(VENUE_INFO).sort((a,b) => a.name.localeCompare(b.name));
+  dl.innerHTML = sorted.map(v => `<option value="${v.name.replace(/"/g,'&quot;')}">`).join('');
+}
+populateVenueDatalist();
+
+let SIGNIN_EVENTS = {};
+
+function formatDateForOption(dateStr){
+  if(!dateStr) return '';
+  const datePart = dateStr.slice(0, 10);
+  const parts = datePart.split('-');
+  if(parts.length !== 3) return dateStr;
+  const [y, m, d] = parts;
+  if(isNaN(Number(m)) || isNaN(Number(d))) return dateStr;
+  return `${Number(m)}/${Number(d)}`;
+}
+
+async function fetchSignInEvents(){
+  const select = document.getElementById('signInAutofill');
+  try{
+    const res = await fetch(CHECKIN_API_URL);
+    if(!res.ok) throw new Error('Request failed');
+    const checkins = await res.json();
+    if(!Array.isArray(checkins)) return;
+
+    SIGNIN_EVENTS = {};
+    checkins.forEach(c => {
+      if(!c.event || !c.eventDate) return;
+      const key = `${c.event.trim().toLowerCase()}|||${c.eventDate}`;
+      if(!SIGNIN_EVENTS[key]) SIGNIN_EVENTS[key] = { event: c.event.trim(), eventDate: c.eventDate, checkins: [] };
+      SIGNIN_EVENTS[key].checkins.push(c);
+    });
+
+    const sortedKeys = Object.keys(SIGNIN_EVENTS).sort((a, b) => SIGNIN_EVENTS[b].eventDate.localeCompare(SIGNIN_EVENTS[a].eventDate));
+    select.innerHTML = '<option value="" selected>Select an event to autofill…</option>' +
+      sortedKeys.map(key => {
+        const e = SIGNIN_EVENTS[key];
+        const label = `${formatDateForOption(e.eventDate)} — ${e.event}`;
+        return `<option value="${key.replace(/"/g,'&quot;')}">${label.replace(/</g,'&lt;')}</option>`;
+      }).join('');
+  } catch(err){
+    // fail silently — this is a convenience autofill, not core functionality
+  }
+}
+fetchSignInEvents();
+
+function autofillFromSignIn(select){
+  const key = select.value;
+  if(!key || !SIGNIN_EVENTS[key]) return;
+  const group = SIGNIN_EVENTS[key];
+
+  document.getElementById('eventDate').value = group.eventDate.slice(0, 10);
+  const eventInput = document.getElementById('event');
+  eventInput.value = group.event;
+  autofillEventAddress(eventInput);
+
+  const headPyro = group.checkins.find(c => c.isHeadPyro);
+  if(headPyro){
+    document.getElementById('opName').value = headPyro.name || '';
+    document.getElementById('license').value = headPyro.license || '';
+  }
+}
+
+function autofillEventAddress(eventInput){
+  const match = VENUE_INFO[eventInput.value.trim().toLowerCase()];
+  if(match){
+    document.getElementById('address').value = match.address;
+    document.getElementById('venue').value = match.county;
+  }
+}
+
+function buildReportPDF(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:'pt', format:'letter'});
+  const marginX = 40;
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const contentWidth = pageWidth - marginX*2;
+  const lineHeight = 14;
+  let y = 50;
+
+  function ensureSpace(extra){
+    if(y + extra > pageHeight - 50){
+      doc.addPage();
+      y = 50;
+    }
+  }
+  function heading(text){
+    ensureSpace(24);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(11);
+    doc.setTextColor(140,59,46);
+    doc.text(text, marginX, y);
+    y += 8;
+    doc.setDrawColor(216,210,196);
+    doc.line(marginX, y, pageWidth-marginX, y);
+    y += 14;
+    doc.setTextColor(20,26,32);
+  }
+  function field(label, value){
+    ensureSpace(lineHeight*2);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(91,100,112);
+    doc.text(label.toUpperCase(), marginX, y);
+    y += 12;
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(10.5);
+    doc.setTextColor(20,26,32);
+    const lines = doc.splitTextToSize(value || '-', contentWidth);
+    doc.text(lines, marginX, y);
+    y += lines.length*lineHeight + 6;
+  }
+
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(14);
+  doc.text('Office of the State Fire Marshal', marginX, y); y += 18;
+  doc.setFontSize(11.5);
+  const titleLines = doc.splitTextToSize('Display/Special Effects/Flame Effects Operator \u2014 After-Action Report', contentWidth);
+  doc.text(titleLines, marginX, y); y += titleLines.length*14 + 4;
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(8.5);
+  doc.setTextColor(91,100,112);
+  doc.text('Required under Rules Pursuant to the Utah Fireworks Act R-710.2.7.19', marginX, y); y += 20;
+  doc.setTextColor(20,26,32);
+
+  heading('Operator & event');
+  field('Name of operator or artisan', val('opName'));
+  field('Date of event or show', val('eventDate'));
+  field('Name of company', val('company'));
+  field('License number', val('license'));
+  field('Address/location of event or show', val('address'));
+  field('Venue', val('event'));
+  field('County', val('venue'));
+  field('Permit department', val('dept'));
+  field('AHJ name & title', val('ahj'));
+  field('Permit number', val('permitNum'));
+  field('Display type', checkboxVals('dtype') || '(not selected)');
+
+  heading('Assisting personnel');
+  const rows = [];
+  document.querySelectorAll('#personnelBody tr').forEach(row=>{
+    const name = row.querySelector('.p-name').value.trim();
+    const lic = row.querySelector('.p-license').value.trim();
+    const addr = row.querySelector('.p-address').value.trim();
+    const age = row.querySelector('.p-age').value.trim();
+    if(name || lic || addr || age) rows.push({name, lic, addr, age});
+  });
+  if(rows.length === 0){
+    ensureSpace(lineHeight);
+    doc.setFont('helvetica','normal'); doc.setFontSize(10);
+    doc.text('(none listed)', marginX, y); y += lineHeight + 4;
+  } else {
+    rows.forEach(r=>{
+      ensureSpace(lineHeight*2);
+      doc.setFont('helvetica','bold'); doc.setFontSize(10);
+      doc.text(r.name || '(no name)', marginX, y); y += 12;
+      doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(91,100,112);
+      doc.text(`License: ${r.lic || '-'}     Age: ${r.age || '-'}`, marginX, y); y += 11;
+      const addrLines = doc.splitTextToSize(r.addr || '-', contentWidth);
+      doc.setTextColor(20,26,32);
+      doc.text(addrLines, marginX, y); y += addrLines.length*11 + 8;
+    });
+  }
+
+  heading('Site safety');
+  field('Flammable materials cleared, vented, stabilized, shut off and secured', radioVal('siteSafe') || '(not answered)');
+
+  heading('Incident summary');
+  field('Duds or defective shells', `${radioVal('q_duds') || '(not answered)'} \u2014 ${val('expl_duds') || '-'}`);
+  field('Injuries', `${radioVal('q_injury') || '(not answered)'} \u2014 ${val('expl_injury') || '-'}`);
+  field('Fire caused by fireworks', `${radioVal('q_fire') || '(not answered)'} \u2014 ${val('expl_fire') || '-'}`);
+  field('Violations or irregularities', `${radioVal('q_viol') || '(not answered)'} \u2014 ${val('expl_viol') || '-'}`);
+  field('Shells/effects used', val('shells'));
+
+  heading('Certification');
+  field('Printed name of operator', val('sigName'));
+  field('Date signed', val('sigDate'));
+
+  ensureSpace(90);
+  doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(91,100,112);
+  doc.text('SIGNATURE', marginX, y); y += 10;
+  if(sigHasContent){
+    const imgData = sigCanvas.toDataURL('image/png');
+    doc.addImage(imgData, 'PNG', marginX, y, 200, 43);
+    y += 55;
+  } else {
+    doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(20,26,32);
+    doc.text('(not signed yet)', marginX, y); y += 16;
+  }
+
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(91,100,112);
+  doc.text('Office of the State Fire Marshal  \u00b7  123 Main Street, Suite 100, Sample City, ST 00000  \u00b7  555-010-2000  \u00b7  state.fire.marshal@example.com', marginX, pageHeight - 30);
+
+  return doc;
+}
+
+function buildAarFileName(){
+  const parts = [];
+  const eventDate = val('eventDate');
+  if(eventDate) parts.push(eventDate);
+  const venue = val('event');
+  if(venue) parts.push(venue.replace(/\s+/g,'_'));
+  const opName = val('opName');
+  if(opName) parts.push(opName.replace(/\s+/g,'_'));
+  const base = parts.length ? parts.join('_') : 'report';
+  return `AAR_${base}.pdf`.replace(/[\\/:*?"<>|]/g, '');
+}
+
+function exportPDF(){
+  if(!validate()) return;
+  const doc = buildReportPDF();
+  doc.save(buildAarFileName());
+}
+
+function buildReportText(){
+  const val = id => document.getElementById(id).value.trim();
+
+  let personnel = [];
+  document.querySelectorAll('#personnelBody tr').forEach(row=>{
+    const name = row.querySelector('.p-name').value.trim();
+    const lic = row.querySelector('.p-license').value.trim();
+    const addr = row.querySelector('.p-address').value.trim();
+    const age = row.querySelector('.p-age').value.trim();
+    if(name || lic || addr || age){
+      personnel.push(`  - ${name || '(no name)'} | License: ${lic || '-'} | ${addr || '-'} | Age: ${age || '-'}`);
+    }
+  });
+
+  const lines = [];
+  lines.push('DISPLAY OPERATOR / SPECIAL EFFECTS OPERATOR / FLAME EFFECTS OPERATOR');
+  lines.push('AFTER-ACTION REPORT');
+  lines.push('(Utah Fireworks Act R-710.2.7.19)');
+  lines.push('');
+  lines.push(`Name of operator or artisan: ${val('opName')}`);
+  lines.push(`Date of event or show: ${val('eventDate')}`);
+  lines.push(`Name of company: ${val('company')}`);
+  lines.push(`License number: ${val('license')}`);
+  lines.push(`Address/location of event or show: ${val('address')}`);
+  lines.push(`Venue: ${val('event')}`);
+  lines.push(`County: ${val('venue')}`);
+  lines.push(`Permit department: ${val('dept')}`);
+  lines.push(`AHJ name & title: ${val('ahj')}`);
+  lines.push(`Permit number: ${val('permitNum')}`);
+  lines.push(`Display type: ${checkboxVals('dtype') || '(not selected)'}`);
+  lines.push('');
+  lines.push('Assisting personnel:');
+  lines.push(personnel.length ? personnel.join('\n') : '  (none listed)');
+  lines.push('');
+  lines.push(`Flammable materials cleared/vented/stabilized/secured: ${radioVal('siteSafe') || '(not answered)'}`);
+  lines.push('');
+  lines.push('Incident summary:');
+  lines.push(`  Duds or defective shells: ${radioVal('q_duds') || '(not answered)'} — ${val('expl_duds') || '-'}`);
+  lines.push(`  Injuries: ${radioVal('q_injury') || '(not answered)'} — ${val('expl_injury') || '-'}`);
+  lines.push(`  Fire caused by fireworks: ${radioVal('q_fire') || '(not answered)'} — ${val('expl_fire') || '-'}`);
+  lines.push(`  Violations or irregularities: ${radioVal('q_viol') || '(not answered)'} — ${val('expl_viol') || '-'}`);
+  lines.push('');
+  lines.push('Shells/effects used:');
+  lines.push(`  ${val('shells') || '(none listed)'}`);
+  lines.push('');
+  lines.push(`Printed name of operator: ${val('sigName')}`);
+  lines.push(`Date signed: ${val('sigDate')}`);
+  lines.push(`Signature: ${sigHasContent ? '(signed — download the signature image separately and attach it)' : '(not signed yet)'}`);
+  lines.push('');
+  lines.push('I hereby certify that I conducted the public display listed above and supervised the firing of all pyrotechnics.');
+
+  return lines.join('\n');
+}
+
+const AAR_DRAFT_KEY = 'aarDraft_v1';
+const AAR_TEXT_FIELDS = ['opName','eventDate','company','license','address','event','venue','dept','ahj','permitNum','shells','sigName','sigDate','expl_duds','expl_injury','expl_fire','expl_viol'];
+
+function collectDraft(){
+  const draft = { fields:{}, radios:{}, checkboxes:{}, personnel:[], sig:null };
+  AAR_TEXT_FIELDS.forEach(id => { const el = document.getElementById(id); if(el) draft.fields[id] = el.value; });
+  draft.checkboxes.dtype = Array.from(document.querySelectorAll('input[name="dtype"]:checked')).map(el => el.value);
+  ['siteSafe','q_duds','q_injury','q_fire','q_viol'].forEach(name => {
+    const checked = document.querySelector(`input[name="${name}"]:checked`);
+    draft.radios[name] = checked ? checked.value : '';
+  });
+  document.querySelectorAll('#personnelBody tr').forEach(row => {
+    draft.personnel.push({
+      name: row.querySelector('.p-name').value,
+      license: row.querySelector('.p-license').value,
+      address: row.querySelector('.p-address').value,
+      age: row.querySelector('.p-age').value
+    });
+  });
+  if(typeof sigHasContent !== 'undefined' && sigHasContent){
+    try{ draft.sig = sigCanvas.toDataURL('image/png'); } catch(e){}
+  }
+  return draft;
+}
+
+function hasDraftContent(draft){
+  const anyField = Object.values(draft.fields).some(v => v && v.trim());
+  const anyRadio = Object.values(draft.radios).some(v => v);
+  const anyCheckbox = draft.checkboxes.dtype && draft.checkboxes.dtype.length > 0;
+  const anyPersonnel = draft.personnel.some(p => p.name || p.license || p.address || p.age);
+  return anyField || anyRadio || anyCheckbox || anyPersonnel || !!draft.sig;
+}
+
+let draftSaveTimer = null;
+function scheduleDraftSave(){
+  clearTimeout(draftSaveTimer);
+  draftSaveTimer = setTimeout(() => {
+    const draft = collectDraft();
+    try{
+      if(hasDraftContent(draft)){
+        localStorage.setItem(AAR_DRAFT_KEY, JSON.stringify(draft));
+      } else {
+        localStorage.removeItem(AAR_DRAFT_KEY);
+      }
+    } catch(e){}
+  }, 800);
+}
+
+function clearDraft(){
+  try{ localStorage.removeItem(AAR_DRAFT_KEY); } catch(e){}
+}
+
+function restoreDraft(draft){
+  Object.keys(draft.fields).forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.value = draft.fields[id];
+  });
+  (draft.checkboxes.dtype || []).forEach(val => {
+    const el = document.querySelector(`input[name="dtype"][value="${CSS.escape(val)}"]`);
+    if(el) el.checked = true;
+  });
+  Object.keys(draft.radios).forEach(name => {
+    if(!draft.radios[name]) return;
+    const el = document.querySelector(`input[name="${name}"][value="${CSS.escape(draft.radios[name])}"]`);
+    if(el) el.checked = true;
+  });
+  document.getElementById('personnelBody').innerHTML = '';
+  personnelCount = 0;
+  (draft.personnel || []).forEach(p => {
+    if(p.name || p.license || p.address || p.age){
+      addPersonnelRow(p.name, p.license, p.address, p.age);
+    }
+  });
+  if(document.querySelectorAll('#personnelBody tr').length === 0){
+    addPersonnelRow(); addPersonnelRow();
+  }
+  if(draft.sig){
+    const img = new Image();
+    img.onload = () => {
+      sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+      sigCtx.drawImage(img, 0, 0, sigCanvas.width, sigCanvas.height);
+      sigHasContent = true;
+    };
+    img.src = draft.sig;
+  }
+  const eventInput = document.getElementById('event');
+  if(eventInput && typeof autofillEventAddress === 'function') autofillEventAddress(eventInput);
+}
+
+function checkForSavedDraft(){
+  let raw;
+  try{ raw = localStorage.getItem(AAR_DRAFT_KEY); } catch(e){ return; }
+  if(!raw) return;
+  let draft;
+  try{ draft = JSON.parse(raw); } catch(e){ clearDraft(); return; }
+  if(!hasDraftContent(draft)){ clearDraft(); return; }
+
+  const banner = document.getElementById('draftBanner');
+  banner.style.display = 'flex';
+  document.getElementById('restoreDraftBtn').onclick = () => {
+    restoreDraft(draft);
+    banner.style.display = 'none';
+  };
+  document.getElementById('discardDraftBtn').onclick = () => {
+    clearDraft();
+    banner.style.display = 'none';
+  };
+}
+
+document.addEventListener('input', scheduleDraftSave);
+document.addEventListener('change', scheduleDraftSave);
+checkForSavedDraft();
+
+let aarSubmitted = false;
+window.addEventListener('beforeunload', (e) => {
+  if(aarSubmitted) return;
+  if(hasDraftContent(collectDraft())){
+    e.preventDefault();
+    e.returnValue = '';
+  }
+});
+
+function validate(){
+  const errBox = document.getElementById('errMsg');
+  const opName = document.getElementById('opName').value.trim();
+  const eventDate = document.getElementById('eventDate').value.trim();
+  if(!opName || !eventDate){
+    errBox.textContent = 'Enter at least the operator name and the date of the event before sending.';
+    errBox.style.display = 'block';
+    return false;
+  }
+  errBox.style.display = 'none';
+  return true;
+}
+
+async function sendReport(){
+  if(!validate()) return;
+  const opName = document.getElementById('opName').value.trim();
+  const eventDate = document.getElementById('eventDate').value.trim();
+  const subject = `After-Action Report - ${opName} - ${eventDate}`;
+  const fileName = buildAarFileName();
+  const recipientLine = 'To: state.fire.marshal@example.com (cc: manager@example.com, office@example.com)';
+  const statusEl = document.getElementById('emailStatus');
+
+  const doc = buildReportPDF();
+  const pdfBlob = doc.output('blob');
+
+  // Try the device's native share sheet first — this can attach the real PDF
+  // to Mail (or any app) on supported browsers, unlike a mailto: link.
+  // The share sheet has no way to pre-fill a recipient, so we surface it
+  // clearly on-screen and at the top of the shared text as a backup.
+  if(navigator.canShare){
+    try{
+      const file = new File([pdfBlob], fileName, {type: 'application/pdf'});
+      if(navigator.canShare({files: [file]})){
+        statusEl.textContent = `Opening share sheet — remember to address it: ${recipientLine}`;
+        await navigator.share({
+          files: [file],
+          title: subject,
+          text: `${recipientLine}\n\n${subject}`
+        });
+        aarSubmitted = true;
+        clearDraft();
+        return;
+      }
+    } catch(err){
+      if(err && err.name === 'AbortError'){
+        statusEl.textContent = '';
+        return; // user cancelled the share sheet
+      }
+      // otherwise fall through to the mailto fallback below
+    }
+  }
+
+  statusEl.textContent = '';
+  // Fallback: download the PDF and open a plain-text email addressed and ready to go
+  doc.save(fileName);
+  const body = buildReportText() + '\n\n(PDF copy downloaded separately — please attach it to this email before sending.)';
+  const mailto = `mailto:state.fire.marshal@example.com?cc=manager@example.com,office@example.com&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  window.location.href = mailto;
+  aarSubmitted = true;
+  clearDraft();
+}
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js').catch(() => {});
+  });
+}
+</script>
+
+</body>
+</html>

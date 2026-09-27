@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manage Venues — Crewsheet</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0f1e">
+<link rel="icon" href="icon-192.png">
+<script>
+function toggleTheme(){
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  if(isLight){
+    document.documentElement.removeAttribute('data-theme');
+    try{ localStorage.setItem('pyroTheme', 'dark'); } catch(e){}
+  } else {
+    document.documentElement.setAttribute('data-theme', 'light');
+    try{ localStorage.setItem('pyroTheme', 'light'); } catch(e){}
+  }
+  updateThemeToggleIcon();
+}
+function updateThemeToggleIcon(){
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  const el = document.getElementById('themeToggleIcon');
+  if(el) el.textContent = isLight ? '🌙' : '☀️';
+}
+updateThemeToggleIcon();
+
+  (function(){
+    try{
+      var saved = localStorage.getItem('pyroTheme');
+      var wantLight;
+      if(saved === 'light' || saved === 'dark'){
+        wantLight = (saved === 'light');
+      } else {
+        wantLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+      }
+      if(wantLight){
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+    } catch(e){}
+  })();
+</script>
+<style>
+  :root{
+    --kicker:#ffb98a; --surface-4:rgba(10,14,26,0.4); --surface-5:rgba(10,14,26,0.5); --surface-55:rgba(10,14,26,0.55); --bg1:#16233f; --bg2:#0a0f1e; --bg3:#05070f;
+    --logo-ring-bg:#0d1220;
+    --navy:#ffb98a; --brick:#ff6a5a; --brick-light:#ff8c66;
+    --paper:#1a2032; --card:rgba(22,28,48,0.75); --line:rgba(255,255,255,0.12);
+    --ink:#f4f1ea; --ink-soft:#a3a9bf; --ok:#4caf7d;
+    --accent1:#d92b2b; --accent2:#ff8c00;
+  }
+
+  :root[data-theme="light"]{
+    --kicker:#c9601f; --surface-4:rgba(255,255,255,0.5); --surface-5:rgba(255,255,255,0.6); --surface-55:rgba(255,255,255,0.65); --bg1:#fdf3e7; --bg2:#f7ead9; --bg3:#f0e0c9; --ink:#241f18; --ink-soft:#6b6152; --card:rgba(255,255,255,0.78); --line:rgba(36,31,24,0.12); --paper:#fdf3e7; --navy:#c9601f;
+    --logo-ring-bg:#fffaf3;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background: radial-gradient(ellipse at 50% -10%, var(--bg1) 0%, var(--bg2) 55%, var(--bg3) 100%); color:var(--ink);
+    font-family:"Helvetica Neue",Arial,sans-serif;
+    padding:32px 16px 80px;
+    min-height:100vh;
+  }
+  .sheet{max-width:640px;margin:0 auto;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;backdrop-filter:blur(6px);}
+  header{text-align:center;margin-bottom:12px;}
+  .logo-ring{
+    width:92px;height:92px;border-radius:50%;
+    padding:3px;
+    background:linear-gradient(140deg,#d92b2b,#ff8c00 35%,#ffd23f 55%,#2f7ec9 75%,#123a63);
+    margin:0 auto 16px;
+    box-shadow:0 0 34px rgba(255,140,0,0.35), 0 0 60px rgba(47,126,201,0.25);
+  }
+  .logo-ring-inner{
+    width:100%;height:100%;border-radius:50%;
+    background:var(--logo-ring-bg);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .logo-ring img{width:72px;height:72px;border-radius:50%;object-fit:cover;}
+  header .kicker{
+    font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--kicker);font-weight:700;margin-bottom:6px;
+  }
+  header h1{
+    margin:0;font-size:22px;font-weight:800;letter-spacing:-0.02em;
+    background:linear-gradient(90deg,#ff6a5a 0%,#ff8c00 30%,#ffd23f 50%,#5a9de0 75%,#7fa8e8 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    line-height:1.15;
+  }
+  .divider{
+    height:3px;width:64px;margin:20px auto 24px;
+    background:linear-gradient(90deg,#d92b2b,#ff8c00 35%,#ffd23f 55%,#2f7ec9 80%,#123a63);
+    border-radius:2px;
+    box-shadow:0 0 12px rgba(255,140,0,0.4);
+  }
+  .section{padding:22px 24px;}
+  .section p.desc{font-size:12.5px;color:var(--ink-soft);margin:0 0 18px;line-height:1.5;}
+  .field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .full{grid-column:1/-1;}
+  label{font-size:11.5px;color:var(--ink-soft);font-weight:600;}
+  input[type=text]{
+    font-size:14px;padding:9px 11px;border:1px solid var(--line);
+    border-radius:6px;background:var(--surface-55);color:var(--ink);
+  }
+  input:focus{outline:none;border-color:#ff8c00;box-shadow:0 0 0 2px rgba(255,140,0,0.2);}
+  button.primary{
+    background:linear-gradient(135deg,var(--accent1),var(--accent2)); color:#fdf6f2; border:none;
+    font-size:14px; font-weight:700; padding:12px 20px; border-radius:8px; cursor:pointer;
+    box-shadow:0 0 16px rgba(255,140,0,0.3);
+  }
+  button.primary:hover{filter:brightness(1.1);}
+  button.secondary{
+    background:none; border:1px solid var(--line); color:var(--navy);
+    font-size:13px; padding:8px 14px; border-radius:6px; cursor:pointer;
+  }
+  button.secondary:hover{border-color:var(--navy);}
+  .editor-box{
+    background:var(--surface-4);border:1px solid var(--line);border-radius:10px;
+    padding:16px;margin-bottom:24px;
+  }
+  .editor-box p.label-title{font-size:11.5px;color:var(--ink-soft);font-weight:600;margin:0 0 12px;}
+  .save-row{display:flex;align-items:center;gap:12px;margin-top:4px;}
+  #venueSaveStatus{font-size:12.5px;}
+  .list-title{font-size:11.5px;color:var(--ink-soft);font-weight:600;margin:0 0 10px;}
+  .search-box{margin-bottom:10px;}
+  #venueListWrap{
+    max-height:400px;overflow-y:auto;border:1px solid var(--line);
+    border-radius:8px;padding:6px 14px;font-size:13px;
+  }
+  .venue-row{
+    display:flex;justify-content:space-between;align-items:center;gap:10px;
+    padding:8px 0;border-bottom:1px solid var(--line);
+  }
+  .venue-row:last-child{border-bottom:none;}
+  .venue-row .venue-name{font-weight:600;}
+  .venue-row .venue-detail{color:var(--ink-soft);font-size:12px;}
+  .venue-row button{
+    background:none;border:1px solid var(--line);color:var(--navy);
+    font-size:12px;padding:5px 10px;border-radius:6px;cursor:pointer;flex-shrink:0;
+  }
+  .venue-row button:hover{border-color:var(--navy);}
+  @media(max-width:480px){
+    .grid2{grid-template-columns:1fr;}
+  }
+  .back-link{
+    display:block; max-width:640px; margin:16px auto 0; padding:0 16px;
+    font-size:12.5px; color:var(--ink-soft); text-decoration:none;
+  }
+  .back-link:hover{color:var(--navy);}
+  .loading-pulse{
+    color:var(--ink-soft); margin:4px 0;
+    animation:pulseFade 1.4s ease-in-out infinite;
+  }
+  @keyframes pulseFade{
+    0%,100%{opacity:0.4;} 50%{opacity:1;}
+  }
+  .empty-state{
+    text-align:center; padding:24px 12px; color:var(--ink-soft);
+  }
+  .empty-state .icon{font-size:26px;margin-bottom:8px;opacity:0.6;}
+  .empty-state p{margin:0;font-size:13px;}
+  .theme-toggle{
+    position:fixed; top:14px; right:14px; z-index:50;
+    width:36px;height:36px;border-radius:50%;
+    background:var(--card); border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;
+    font-size:16px; cursor:pointer;
+    transition:transform 0.15s ease;
+  }
+  .theme-toggle:hover{transform:scale(1.08);}
+</style>
+
+</head>
+<body>
+<button type="button" class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Switch theme"><span id="themeToggleIcon">☀️</span></button>
+
+
+<a class="back-link" href="index.html">&larr; Back to main menu</a>
+
+<header>
+  <div class="logo-ring"><div class="logo-ring-inner"><img src="logo.jpg" alt="Crewsheet logo"></div></div>
+  <p class="kicker">Crewsheet</p>
+  <h1>Manage Venues</h1>
+</header>
+
+<div class="divider"></div>
+
+<div class="sheet" id="mainContent">
+  <div class="section">
+    <p class="desc">Add a new venue or update an existing one's address or county. Changes save to the shared venue list and show up in the Venue dropdown on the After-Action Report, Check-In, Payroll, and QR code pages right away.</p>
+
+    <div class="editor-box">
+      <p class="label-title">ADD / UPDATE VENUE</p>
+      <div class="grid2" style="margin-bottom:10px;">
+        <div class="field full">
+          <label for="vEditName">Venue name</label>
+          <input type="text" id="vEditName" list="venueDirectoryList" oninput="prefillVenueEdit(this)">
+        </div>
+        <div class="field full"><label for="vEditAddress">Address</label><input type="text" id="vEditAddress" onblur="this.value = toTitleCase(this.value)"></div>
+        <div class="field"><label for="vEditCounty">County</label><input type="text" id="vEditCounty"></div>
+        <div class="field"><label for="vEditDate">Event date</label><input type="date" id="vEditDate"></div>
+      </div>
+      <datalist id="venueDirectoryList"></datalist>
+      <div class="save-row">
+        <button class="primary" type="button" onclick="saveVenue()">Save venue</button>
+        <span id="venueSaveStatus"></span>
+      </div>
+    </div>
+
+    <p class="list-title">CURRENT VENUES</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+      <button class="secondary" type="button" onclick="exportVenuesCSV()">Export as CSV</button>
+      <label style="display:inline-flex;align-items:center;padding:8px 14px;border:1px solid var(--line);border-radius:3px;font-size:13px;cursor:pointer;color:var(--navy);background:none;">
+        Import from CSV
+        <input type="file" accept=".csv" style="display:none;" onchange="handleCsvImport(event)">
+      </label>
+      <button class="secondary" type="button" onclick="findDuplicateVenues()">Find duplicates</button>
+    </div>
+    <p id="csvImportStatus" style="font-size:12px;color:var(--ok);margin:0 0 12px;"></p>
+    <div id="duplicatesWrap" style="margin:0 0 16px;"></div>
+
+    <div class="field search-box">
+      <input type="text" id="venueSearch" placeholder="Search by name…" oninput="renderVenueList()">
+    </div>
+    <p style="font-size:11.5px;color:var(--ink-soft);margin:0 0 8px;">Edit Address or County directly below, then click "Save all changes" to publish everything at once. To rename a venue, use "Rename" to load it into the editor above.</p>
+    <div id="venueListWrap">
+      <p class="loading-pulse">Loading…</p>
+    </div>
+    <div style="margin-top:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <button class="primary" type="button" onclick="saveAllVenues()">Save all changes</button>
+      <span id="bulkSaveStatus" style="font-size:12.5px;color:var(--ink-soft);"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+const CHECKIN_API_URL = "PASTE_YOUR_DEMO_APPS_SCRIPT_URL_HERE";
+
+const BASE_VENUES = [
+  {name:"Rivergate Stadium", address:"400 Stadium Way, Rivergate, ST 00000", county:"Rivergate"},
+  {name:"Northgate University", address:"1 Founders Cir, Northgate, ST 00000", county:"Northgate"},
+  {name:"Millbrook Ballpark", address:"100 Ballpark Way, Millbrook, ST 00000", county:"Millbrook"},
+  {name:"Trailer Loading", address:"Shop", county:"Rivergate"},
+  {name:"Shop Time", address:"Shop", county:"Rivergate"},
+  {name:"Bunker Time", address:"Bunker", county:"Rivergate"},
+  {name:"Rivergate High School", address:"350 School St, Rivergate, ST 00000", county:"Rivergate"},
+  {name:"Northgate High School", address:"12 Beetdigger Blvd, Northgate, ST 00000", county:"Northgate"},
+  {name:"Millbrook Central High School", address:"545 Copper Hills Pkwy, Millbrook, ST 00000", county:"Millbrook"},
+  {name:"Founders Park", address:"90 Founders Way, Rivergate, ST 00000", county:"Rivergate"},
+  {name:"Lakeside Amphitheater", address:"77 Lakeside Dr, Millbrook, ST 00000", county:"Millbrook"},
+  {name:"Rivergate City Hall", address:"200 Civic Center Dr, Rivergate, ST 00000", county:"Rivergate"},
+  {name:"Northgate City Hall", address:"14 Civic Way, Northgate, ST 00000", county:"Northgate"},
+  {name:"Millbrook Fairgrounds", address:"930 Fair Ln, Millbrook, ST 00000", county:"Millbrook"},
+  {name:"Summit Community College", address:"800 College Pkwy, Northgate, ST 00000", county:"Northgate"},
+  {name:"Riverside Golf Club", address:"22 Fairway Dr, Rivergate, ST 00000", county:"Rivergate"},
+  {name:"Sample County Fair", address:"1050 Fair Blvd, Sample, ST 00000", county:"Sample"}
+];
+
+const VENUE_DIRECTORY = {};
+BASE_VENUES.forEach(v => VENUE_DIRECTORY[v.name.toLowerCase()] = v);
+
+async function fetchVenueDirectory(){
+  try{
+    const res = await fetch(`${CHECKIN_API_URL}?type=venues`);
+    if(!res.ok) throw new Error('Request failed');
+    const sheetVenues = await res.json();
+    if(Array.isArray(sheetVenues)){
+      sheetVenues.forEach(v => {
+        if(!v.name) return;
+        VENUE_DIRECTORY[v.name.trim().toLowerCase()] = {
+          name: v.name.trim(),
+          address: v.address || '',
+          county: v.county || '',
+          eventDate: v.eventDate || ''
+        };
+      });
+    }
+  } catch(err){
+    // Sheet sync failed — still show the built-in venue list below
+  }
+  populateVenueDatalist();
+  renderVenueList();
+}
+
+function populateVenueDatalist(){
+  const dl = document.getElementById('venueDirectoryList');
+  dl.innerHTML = Object.values(VENUE_DIRECTORY).map(v => `<option value="${v.name}">`).join('');
+}
+
+function prefillVenueEdit(nameInput){
+  if(!nameInput.value.trim()){
+    originalVenueName = null;
+  }
+  const match = VENUE_DIRECTORY[nameInput.value.trim().toLowerCase()];
+  if(match){
+    document.getElementById('vEditAddress').value = match.address || '';
+    document.getElementById('vEditCounty').value = match.county || '';
+    document.getElementById('vEditDate').value = match.eventDate || '';
+  }
+}
+
+async function findDuplicateVenues(){
+  const wrap = document.getElementById('duplicatesWrap');
+  wrap.innerHTML = '<p class="loading-pulse">Checking for duplicates…</p>';
+  try{
+    const res = await fetch(`${CHECKIN_API_URL}?type=findDuplicateVenues`);
+    if(!res.ok) throw new Error('Request failed');
+    const groups = await res.json();
+    renderDuplicateVenues(groups);
+  } catch(err){
+    wrap.innerHTML = '<p style="color:var(--brick);font-size:13px;">Could not check for duplicates — check your connection and try again.</p>';
+  }
+}
+
+function renderDuplicateVenues(groups){
+  const wrap = document.getElementById('duplicatesWrap');
+  if(!groups || groups.length === 0){
+    wrap.innerHTML = '<p style="font-size:13px;color:var(--ok);">No duplicates found — every venue name appears only once.</p>';
+    return;
+  }
+  wrap.innerHTML = `<p style="font-size:11.5px;color:var(--ink-soft);font-weight:600;margin:0 0 10px;">${groups.length} DUPLICATE NAME${groups.length > 1 ? 'S' : ''} FOUND</p>` +
+    groups.map((g, gi) => `
+      <div style="background:rgba(255,140,0,0.08);border:1px solid rgba(255,140,0,0.3);border-radius:10px;padding:14px;margin-bottom:12px;">
+        <p style="font-weight:700;margin:0 0 10px;">${g.rows[0].name}</p>
+        ${g.rows.map((r, ri) => `
+          <div style="background:var(--surface-4);border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:12.5px;">
+            <div style="color:var(--ink-soft);line-height:1.6;">
+              Address: ${r.address || '—'}<br>
+              County: ${r.county || '—'}
+            </div>
+            <button type="button" style="margin-top:8px;" onclick="keepDuplicateVenueRow(${gi}, ${ri})">Keep this one, delete the other${g.rows.length > 2 ? 's' : ''}</button>
+          </div>
+        `).join('')}
+      </div>
+    `).join('');
+  window._duplicateVenueGroups = groups;
+}
+
+async function keepDuplicateVenueRow(groupIndex, keepIndex){
+  const group = window._duplicateVenueGroups[groupIndex];
+  const keepRow = group.rows[keepIndex];
+  const toDelete = group.rows.filter((r, i) => i !== keepIndex);
+  if(!confirm(`Keep this entry for ${keepRow.name} and delete the other ${toDelete.length}? This can't be undone.`)) return;
+
+  for(const row of toDelete){
+    try{
+      await fetch(CHECKIN_API_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        body: JSON.stringify({ recordType: 'deleteVenueRow', rowNumber: row.rowNumber })
+      });
+    } catch(err){}
+  }
+  await fetchVenueDirectory();
+  renderVenueList();
+  document.getElementById('duplicatesWrap').innerHTML = `<p style="font-size:13px;color:var(--ok);">Combined — kept one entry for ${keepRow.name}.</p>`;
+}
+
+function renderVenueList(){
+  const wrap = document.getElementById('venueListWrap');
+  const search = document.getElementById('venueSearch').value.trim().toLowerCase();
+  let venues = Object.values(VENUE_DIRECTORY).sort((a, b) => {
+    if(a.eventDate && b.eventDate) return a.eventDate.localeCompare(b.eventDate);
+    if(a.eventDate && !b.eventDate) return -1;
+    if(!a.eventDate && b.eventDate) return 1;
+    return a.name.localeCompare(b.name);
+  });
+  if(search){
+    venues = venues.filter(v => v.name.toLowerCase().includes(search));
+  }
+  if(venues.length === 0){
+    wrap.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>No venues found. Try a different search, or add one above.</p></div>';
+    return;
+  }
+  wrap.innerHTML = `
+    <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
+      <thead>
+        <tr>
+          <th style="text-align:left;padding:4px 6px 8px;color:var(--ink-soft);font-size:10.5px;">NAME</th>
+          <th style="text-align:left;padding:4px 6px 8px;color:var(--ink-soft);font-size:10.5px;width:100px;">DATE</th>
+          <th style="text-align:left;padding:4px 6px 8px;color:var(--ink-soft);font-size:10.5px;">ADDRESS</th>
+          <th style="text-align:left;padding:4px 6px 8px;color:var(--ink-soft);font-size:10.5px;width:90px;">COUNTY</th>
+          <th style="width:60px;"></th>
+        </tr>
+      </thead>
+      <tbody>
+        ${venues.map(v => {
+          const key = v.name.toLowerCase().replace(/'/g, "\\'");
+          return `
+          <tr style="border-bottom:1px solid var(--line);">
+            <td style="padding:6px;font-weight:600;vertical-align:top;color:var(--ink);">${v.name}</td>
+            <td style="padding:6px;vertical-align:top;">
+              <input type="date" value="${v.eventDate || ''}"
+                style="width:100%;font-size:12px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface-55);color:var(--ink);"
+                oninput="updateVenueField('${key}','eventDate',this.value)">
+            </td>
+            <td style="padding:6px;vertical-align:top;">
+              <input type="text" value="${(v.address || '').replace(/"/g,'&quot;')}"
+                style="width:100%;font-size:12px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface-55);color:var(--ink);"
+                oninput="updateVenueField('${key}','address',this.value)">
+            </td>
+            <td style="padding:6px;vertical-align:top;">
+              <input type="text" value="${(v.county || '').replace(/"/g,'&quot;')}"
+                style="width:100%;font-size:12px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface-55);color:var(--ink);"
+                oninput="updateVenueField('${key}','county',this.value)">
+            </td>
+            <td style="padding:6px;vertical-align:top;">
+              <button type="button" style="background:none;border:1px solid var(--line);color:var(--navy);font-size:11.5px;padding:5px 8px;border-radius:6px;cursor:pointer;" onclick="loadVenueIntoEditor('${key}')">Rename</button>
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function updateVenueField(key, field, value){
+  if(VENUE_DIRECTORY[key]) VENUE_DIRECTORY[key][field] = value;
+}
+
+async function saveAllVenues(){
+  const statusEl = document.getElementById('bulkSaveStatus');
+  const venues = Object.values(VENUE_DIRECTORY).sort((a,b) => a.name.localeCompare(b.name));
+  let count = 0;
+  for(const v of venues){
+    count++;
+    statusEl.textContent = `Saving ${count} of ${venues.length}: ${v.name}…`;
+    try{
+      await fetch(CHECKIN_API_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        body: JSON.stringify({ recordType: 'venue', name: v.name, address: v.address || '', county: v.county || '', eventDate: v.eventDate || '' })
+      });
+    } catch(err){
+      // continue on to the next venue even if one fails
+    }
+    await new Promise(r => setTimeout(r, 150));
+  }
+  statusEl.textContent = `Saved all ${count} venues.`;
+}
+
+function csvEscape(val){
+  val = String(val == null ? '' : val);
+  if(val.includes(',') || val.includes('"') || val.includes('\n')){
+    return '"' + val.replace(/"/g, '""') + '"';
+  }
+  return val;
+}
+
+function exportVenuesCSV(){
+  const venues = Object.values(VENUE_DIRECTORY).sort((a,b) => a.name.localeCompare(b.name));
+  const lines = ['Name,Address,County,EventDate'];
+  venues.forEach(v => lines.push([csvEscape(v.name), csvEscape(v.address), csvEscape(v.county), csvEscape(v.eventDate)].join(',')));
+  const blob = new Blob([lines.join('\n')], {type: 'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'venues.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function parseCSV(text){
+  const rows = [];
+  let i = 0, field = '', row = [], inQuotes = false;
+  while(i < text.length){
+    const char = text[i];
+    if(inQuotes){
+      if(char === '"'){
+        if(text[i+1] === '"'){ field += '"'; i++; }
+        else { inQuotes = false; }
+      } else {
+        field += char;
+      }
+    } else {
+      if(char === '"'){
+        inQuotes = true;
+      } else if(char === ','){
+        row.push(field); field = '';
+      } else if(char === '\n' || char === '\r'){
+        if(char === '\r' && text[i+1] === '\n') i++;
+        row.push(field); field = '';
+        if(row.some(c => c !== '')) rows.push(row);
+        row = [];
+      } else {
+        field += char;
+      }
+    }
+    i++;
+  }
+  if(field.length || row.length){
+    row.push(field);
+    if(row.some(c => c !== '')) rows.push(row);
+  }
+  return rows;
+}
+
+async function handleCsvImport(event){
+  const file = event.target.files[0];
+  const statusEl = document.getElementById('csvImportStatus');
+  if(!file) return;
+  try{
+    const text = await file.text();
+    const rows = parseCSV(text);
+    if(rows.length < 2){
+      statusEl.style.color = 'var(--brick)';
+      statusEl.textContent = 'That CSV looks empty — need a header row plus at least one venue.';
+      return;
+    }
+    const headers = rows[0].map(h => h.trim().toLowerCase());
+    const nameIdx = headers.indexOf('name');
+    const addressIdx = headers.indexOf('address');
+    const countyIdx = headers.indexOf('county');
+    const dateIdx = ['eventdate', 'event date', 'date of event', 'date'].map(h => headers.indexOf(h)).find(i => i > -1) ?? -1;
+    if(nameIdx === -1){
+      statusEl.style.color = 'var(--brick)';
+      statusEl.textContent = 'CSV needs a "Name" column header.';
+      return;
+    }
+    let added = 0, updated = 0;
+    for(let r = 1; r < rows.length; r++){
+      const row = rows[r];
+      const name = (row[nameIdx] || '').trim();
+      if(!name) continue;
+      const address = addressIdx > -1 ? (row[addressIdx] || '').trim() : '';
+      const county = countyIdx > -1 ? (row[countyIdx] || '').trim() : '';
+      const eventDate = dateIdx > -1 ? (row[dateIdx] || '').trim() : '';
+      const key = name.toLowerCase();
+      if(VENUE_DIRECTORY[key]) updated++; else added++;
+      VENUE_DIRECTORY[key] = { name, address, county, eventDate };
+    }
+    populateVenueDatalist();
+    renderVenueList();
+    statusEl.style.color = 'var(--ok)';
+    statusEl.textContent = `Imported: ${added} new, ${updated} updated. Review below, then click "Save all changes" to publish.`;
+  } catch(err){
+    statusEl.style.color = 'var(--brick)';
+    statusEl.textContent = 'Could not read that file — make sure it\'s a valid CSV.';
+  } finally {
+    event.target.value = '';
+  }
+}
+
+function toTitleCase(str){
+  if(!str) return str;
+  return str.trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+}
+
+let originalVenueName = null;
+
+function loadVenueIntoEditor(name){
+  const match = VENUE_DIRECTORY[name.toLowerCase()];
+  if(!match) return;
+  originalVenueName = match.name;
+  document.getElementById('vEditName').value = match.name;
+  document.getElementById('vEditAddress').value = match.address || '';
+  document.getElementById('vEditCounty').value = match.county || '';
+  document.getElementById('vEditDate').value = match.eventDate || '';
+  document.getElementById('vEditName').scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+function saveVenue(){
+  const statusEl = document.getElementById('venueSaveStatus');
+  const name = document.getElementById('vEditName').value.trim();
+  const address = document.getElementById('vEditAddress').value.trim();
+  const county = document.getElementById('vEditCounty').value.trim();
+  const eventDate = document.getElementById('vEditDate').value.trim();
+
+  if(!name){
+    statusEl.textContent = 'Enter a venue name first.';
+    statusEl.style.color = 'var(--brick)';
+    return;
+  }
+
+  statusEl.textContent = 'Saving…';
+  statusEl.style.color = 'var(--ink-soft)';
+
+  const payload = { recordType: 'venue', name, address, county, eventDate };
+  if(originalVenueName){
+    payload.originalName = originalVenueName;
+  }
+
+  fetch(CHECKIN_API_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    body: JSON.stringify(payload)
+  }).then(() => {
+    if(originalVenueName && originalVenueName.toLowerCase() !== name.toLowerCase()){
+      delete VENUE_DIRECTORY[originalVenueName.toLowerCase()];
+    }
+    VENUE_DIRECTORY[name.toLowerCase()] = { name, address, county, eventDate };
+    populateVenueDatalist();
+    renderVenueList();
+    statusEl.textContent = 'Saved.';
+    statusEl.style.color = 'var(--ok)';
+    originalVenueName = null;
+    document.getElementById('vEditName').value = '';
+    document.getElementById('vEditAddress').value = '';
+    document.getElementById('vEditCounty').value = '';
+    document.getElementById('vEditDate').value = '';
+  }).catch(() => {
+    statusEl.textContent = 'Could not save — check your connection and try again.';
+    statusEl.style.color = 'var(--brick)';
+  });
+}
+
+fetchVenueDirectory();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
